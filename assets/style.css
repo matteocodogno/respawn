@@ -1502,7 +1502,7 @@ html.thumb .foot, html.thumb .term-label { display: none; }
 /* ---------- Print view (media/print.html loads slides with ?thumb=1&print=1) ---------- */
 html.print .foot { display: flex; }
 html.print, html.print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-html.print .sparks, html.print .wipe, html.print .holes { display: none; }
+html.print .wipe, html.print .holes { display: none; }
 
 /* ---------- Polls (q) ---------- */
 .poll-ov.open { background: rgba(7, 4, 10, .86); backdrop-filter: blur(3px); }
@@ -1824,6 +1824,10 @@ button.danger { background: #ffd9d4 !important; }
 .audience #top:has(.qa-stage.on) .aud-tools, .audience #top:has(.qa-stage.on) nav-arrows, .audience #top:has(.qa-stage.on) .live-chip { display: none !important; }
 
 /* "e": the PDF downloads directly; the print view stays as a fallback. */
+.export-mode { display: flex; flex-direction: column; gap: calc(var(--u) * .5); font-size: calc(var(--u) * 1.1); }
+.export-mode label { display: flex; align-items: baseline; gap: calc(var(--u) * .6); cursor: pointer; }
+.export-mode b { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.export-mode input { accent-color: var(--yellow); }
 .export-alt { all: unset; cursor: pointer; align-self: center; font: 600 calc(var(--u) * 1.1) / 1 var(--body); text-decoration: underline; color: inherit; opacity: .75; }
 .export-alt:hover, .export-alt:focus-visible { opacity: 1; }
 .export-go[disabled] { opacity: .7; cursor: progress; }

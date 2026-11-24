@@ -327,7 +327,11 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 	if q.Get("theme") == "halloween" {
 		theme = "halloween"
 	}
-	data, name, err := s.PDF(r.Context(), a, b, theme)
+	mode := pdf.ModeExact
+	if q.Get("mode") == pdf.ModeText {
+		mode = pdf.ModeText
+	}
+	data, name, err := s.PDF(r.Context(), a, b, theme, mode)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -339,7 +343,7 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 }
 
 // PDF prints slides a..b of the running deck.
-func (s *Server) PDF(ctx context.Context, a, b int, theme string) ([]byte, string, error) {
+func (s *Server) PDF(ctx context.Context, a, b int, theme, mode string) ([]byte, string, error) {
 	s.pdfMu.Lock()
 	defer s.pdfMu.Unlock()
 	p, built := s.current()
@@ -349,9 +353,9 @@ func (s *Server) PDF(ctx context.Context, a, b int, theme string) ([]byte, strin
 	if chrome == "" {
 		chrome = "no Chrome found"
 	}
-	fmt.Fprintf(s.o.Out, "PDF: slides %d-%d with %s…\n", a, b, chrome)
+	fmt.Fprintf(s.o.Out, "PDF (%s): slides %d-%d with %s…\n", mode, a, b, chrome)
 	start := time.Now()
-	data, err := pdf.Render(ctx, pdf.Request{Base: s.base(), Deck: built.Deck.Name, From: a, To: b, Theme: theme})
+	data, err := pdf.Render(ctx, pdf.Request{Base: s.base(), Deck: built.Deck.Name, From: a, To: b, Theme: theme, Mode: mode})
 	if err != nil {
 		fmt.Fprintf(s.o.Out, "PDF failed: %v\n", err)
 		return nil, "", err
@@ -461,7 +465,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 // ExportPDF serves the deck on a free local port just long enough to print slides a..b
 // (to < 0: the last slide). It is `respawn pdf`.
-func (s *Server) ExportPDF(ctx context.Context, a, b int, theme string) ([]byte, string, error) {
+func (s *Server) ExportPDF(ctx context.Context, a, b int, theme, mode string) ([]byte, string, error) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, "", err
@@ -474,5 +478,5 @@ func (s *Server) ExportPDF(ctx context.Context, a, b int, theme string) ([]byte,
 		_, built := s.current()
 		b = len(built.Slides) - 1
 	}
-	return s.PDF(ctx, a, b, theme)
+	return s.PDF(ctx, a, b, theme, mode)
 }

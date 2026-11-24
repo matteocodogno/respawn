@@ -11,6 +11,7 @@ const root = document.documentElement;
 const top = document.getElementById('top');
 const params = new URLSearchParams(location.search);
 const THUMB = params.has('thumb');
+const PRINT = THUMB && params.has('print');
 // Audience copy (served by the audience server): slides only, no terminal and no presenter tools.
 const AUD = !!window.RESPAWN_AUDIENCE;
 const CFG = window.RESPAWN || {};
@@ -50,7 +51,41 @@ if (THUMB) {
     document.querySelectorAll('web-term').forEach((t) => t.replaceWith(el('div', 'term-ghost', '<span>LIVE TERMINAL</span>')));
     window.BroadcastChannel = class { postMessage() {} close() {} set onmessage(_) {} };
     root.classList.add('thumb', 'ready');
-    if (params.has('print')) root.classList.add('print');
+    if (PRINT) root.classList.add('print');
+}
+
+// ------------------------------------------------------------------ print frame
+// For the PDF export (and the print view) a slide must look exactly as on screen, frozen:
+// once the fonts and the Mermaid diagrams are ready, every animation stops on one frame
+// (loops in the middle of their cycle, entrances at their end) and __slideReady is set.
+if (PRINT) {
+    const fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    const diagrams = () => new Promise((ok) => {
+        const t0 = Date.now();
+        const check = () => {
+            const pending = [...document.querySelectorAll('.mermaid')].some((m) => !m.querySelector('svg'));
+            if (!pending || Date.now() - t0 > 6000) ok(); else setTimeout(check, 100);
+        };
+        check();
+    });
+    const freeze = () => {
+        for (const a of document.getAnimations()) {
+            try {
+                const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
+                if (t && t.iterations === Infinity) {
+                    a.pause();
+                    // the drifting sparks keep their own (random) place; other loops stop mid-cycle
+                    if (a.animationName !== 'drift') a.currentTime = Math.max(0, t.delay || 0) + (Number(t.duration) || 0) / 2;
+                } else {
+                    a.finish();
+                }
+            } catch { /* an animation that cannot be moved stays as it is */ }
+        }
+    };
+    Promise.all([fonts, diagrams()])
+        .then(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))))
+        .then(() => { freeze(); return new Promise((ok) => setTimeout(ok, 120)); })
+        .then(() => { freeze(); window.__slideReady = true; });
 }
 
 // ------------------------------------------------------------------ entrance animations
@@ -69,7 +104,7 @@ for (const body of document.querySelectorAll('.slide .body')) {
 }
 document.querySelectorAll('.hero-title span').forEach((s, i) => s.style.setProperty('--i', i));
 
-if (top && !THUMB && !reduce) {
+if (top && (!THUMB || PRINT) && !reduce) {
     const sparks = el('div', 'sparks');
     const colours = ['var(--yellow)', 'var(--magenta)', 'var(--cyan)', 'var(--orange)'];
     for (let i = 0; i < 26; i++) {
@@ -1321,9 +1356,13 @@ const exportOv = el('div', 'ov export-ov', `
             <button type="button" data-q="module">This module</button>
             <button type="button" data-q="all">Whole deck</button>
         </div>
+        <div class="export-mode" role="radiogroup" aria-label="Kind of PDF">
+            <label><input type="radio" name="rsp-export-mode" value="exact" checked> <b>Exact</b> the slides as on screen</label>
+            <label><input type="radio" name="rsp-export-mode" value="text"> <b>Text</b> lighter, selectable text</label>
+        </div>
         <button class="export-go" type="submit"><span class="ms">download</span> Download the PDF</button>
         <button class="export-alt" type="button" data-q="print">or open the print view</button>
-        <p class="export-hint">16:9, one slide per page, no margins. Needs Chrome, Chromium, Brave or Edge installed.</p>
+        <p class="export-hint">16:9, one slide per page, no margins. Exact: pictures of the slides, as on screen. Text: drawn by the print engine, text you can select and search. Needs Chrome, Chromium, Brave or Edge installed.</p>
     </form>`);
 if (top && !OFF) {
     top.appendChild(exportOv);
@@ -1351,6 +1390,11 @@ if (top && !OFF) {
         return [a, b];
     };
     const hint = exportOv.querySelector('.export-hint');
+    try {
+        const saved = localStorage.getItem(`${NS}.export.mode`);
+        const radio = saved && exportOv.querySelector(`input[name="rsp-export-mode"][value="${saved}"]`);
+        if (radio) radio.checked = true;
+    } catch { /* private window */ }
     const go = exportOv.querySelector('.export-go');
     const theme = () => (root.classList.contains('halloween') ? '&theme=halloween' : '');
     exportOv.querySelector('.export-alt').addEventListener('click', () => {
@@ -1369,9 +1413,11 @@ if (top && !OFF) {
         go.innerHTML = `<span class="ms">hourglass_top</span> Making ${n} slide${n > 1 ? 's' : ''}…`;
         const t0 = Date.now();
         const tick = setInterval(() => {
-            hint.textContent = `Working… ${Math.round((Date.now() - t0) / 1000)} s (about ${Math.max(5, Math.round(n * 0.6))} s for ${n} slides). You can keep presenting: the file downloads when it is ready.`;
+            hint.textContent = `Working… ${Math.round((Date.now() - t0) / 1000)} s (about ${Math.max(5, Math.round(n * 0.8))} s for ${n} slides). You can keep presenting: the file downloads when it is ready.`;
         }, 1000);
-        fetch(`/__pdf?from=${a}&to=${b}${theme()}`, { cache: 'no-store' })
+        const mode = (exportOv.querySelector('input[name="rsp-export-mode"]:checked') || { value: 'exact' }).value;
+        try { localStorage.setItem(`${NS}.export.mode`, mode); } catch { /* private window */ }
+        fetch(`/__pdf?from=${a}&to=${b}&mode=${mode}${theme()}`, { cache: 'no-store' })
             .then(async (r) => {
                 if (!r.ok) throw new Error(await r.text());
                 const cd = r.headers.get('Content-Disposition') || '';

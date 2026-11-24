@@ -82,13 +82,15 @@ window.addEventListener('error', (e) => window.__printErrors.push(String(e.messa
 
   // Load a few frames at a time so a long range does not hammer demoit.
   let done = 0;
+  // Each slide says when it is ready (fonts, diagrams, animations frozen): __slideReady.
   const settle = (f) => new Promise((ok) => {
-    const w = f.contentWindow;
-    const fonts = w && w.document && w.document.fonts ? w.document.fonts.ready : Promise.resolve();
-    // Mermaid diagrams render after load: give them a moment.
-    const hasMermaid = w && w.document && w.document.querySelector('.mermaid');
-    Promise.race([fonts, new Promise((r) => setTimeout(r, 3000))])
-      .then(() => setTimeout(ok, hasMermaid ? 1800 : 300));
+    const t0 = Date.now();
+    const check = () => {
+      let ready = false;
+      try { ready = !!(f.contentWindow && f.contentWindow.__slideReady); } catch { ready = true; }
+      if (ready || Date.now() - t0 > 8000) ok(); else setTimeout(check, 50);
+    };
+    check();
   });
   const load = (f) => new Promise((ok) => {
     // A frame that never finishes loading (an open connection, a terminal) must not hold

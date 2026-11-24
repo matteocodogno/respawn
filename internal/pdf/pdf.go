@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 
 	"github.com/matteocodogno/respawn/internal/deck"
@@ -72,8 +74,15 @@ type Request struct {
 	Deck     string
 	From, To int
 	Theme    string
+	Mode     string // "exact" (default): pixel copies of the slides; "text": vector, selectable text
 	Log      func(format string, args ...any)
 }
+
+// Modes of an export.
+const (
+	ModeExact = "exact"
+	ModeText  = "text"
+)
 
 // Render returns the PDF bytes of slides From..To.
 func Render(ctx context.Context, r Request) ([]byte, error) {
@@ -94,7 +103,7 @@ func Render(ctx context.Context, r Request) ([]byte, error) {
 	}
 	target := strings.TrimRight(r.Base, "/") + "/media/print.html?" + q.Encode()
 	count := r.To - r.From + 1
-	timeout := 40*time.Second + time.Duration(count)*1500*time.Millisecond
+	timeout := 40*time.Second + time.Duration(count)*2500*time.Millisecond
 
 	profile, err := os.MkdirTemp("", "respawn-pdf-")
 	if err != nil {
@@ -142,6 +151,18 @@ func Render(ctx context.Context, r Request) ([]byte, error) {
 	}
 	tctx, cancelT := context.WithTimeout(cctx, timeout)
 	defer cancelT()
+	if r.Mode != ModeText {
+		pages, err := screenshots(tctx, r, &stage)
+		if err != nil {
+			return fail(err)
+		}
+		stage = "writing the PDF"
+		out, err := imagePDF(pages, 1200, 675)
+		if err != nil {
+			return fail(err)
+		}
+		return out, nil
+	}
 	stage = "opening the slides"
 	if err := chromedp.Do(tctx, chromedp.Navigate(target)); err != nil {
 		return fail(err)
@@ -272,3 +293,55 @@ func Name(title string, mods []Module, a, b int) string {
 	}
 	return reUnsafe.ReplaceAllString(strings.Join(parts, " - "), "") + ".pdf"
 }
+
+// screenshots takes every slide as the browser shows it, at twice its size (3200x1800).
+func screenshots(ctx context.Context, r Request, stage *string) ([][]byte, error) {
+	*stage = "setting up the window"
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1600, 900, chromedp.EmulateScale(2))); err != nil {
+		return nil, err
+	}
+	base := strings.TrimRight(r.Base, "/")
+	theme := ""
+	if r.Theme != "" {
+		theme = "&theme=" + url.QueryEscape(r.Theme)
+	}
+	q := int64(92)
+	var pages [][]byte
+	for n := r.From; n <= r.To; n++ {
+		*stage = fmt.Sprintf("loading slide %d", n)
+		if err := chromedp.Do(ctx, chromedp.Navigate(fmt.Sprintf("%s/%d?thumb=1&print=1%s", base, n, theme))); err != nil {
+			return nil, err
+		}
+		deadline := time.Now().Add(10 * time.Second)
+		for {
+			ready, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`window.__slideReady === true`))
+			if err != nil {
+				return nil, err
+			}
+			if ready || time.Now().After(deadline) {
+				break
+			}
+			time.Sleep(60 * time.Millisecond)
+		}
+		*stage = fmt.Sprintf("taking slide %d", n)
+		img, err := chromedp.Run(ctx, chromedp.Action[[]byte](func(ctx context.Context, t *chromedp.Target) ([]byte, error) {
+			res, err := cdp.Call(ctx, t, page.CaptureScreenshot, page.CaptureScreenshotParams{
+				Format: page.CaptureScreenshotFormatJpeg, Quality: &q, FromSurface: ptrTrue(),
+			})
+			if err != nil {
+				return nil, err
+			}
+			return res.Data, nil
+		}))
+		if err != nil {
+			return nil, err
+		}
+		pages = append(pages, img)
+		if r.Log != nil {
+			r.Log("slide %d ready", n)
+		}
+	}
+	return pages, nil
+}
+
+func ptrTrue() *bool { t := true; return &t }

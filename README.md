@@ -51,7 +51,7 @@ Press `?` in the deck for every shortcut.
 | `respawn new <folder>` | a new presentation |
 | `respawn serve [deck]` | present a deck (`--port`, `--dev`, `--audience`, `--tunnel`, `--resume`, `--session CODE`, `--live N`) |
 | `respawn build [--out dir]` | build every deck and report errors with file and line; `--out` writes the result |
-| `respawn pdf [deck] --from N --to M [--out file.pdf]` | a range of slides as a PDF (default: `~/Downloads`, named after the module) |
+| `respawn pdf [deck] --from N --to M [--out file.pdf] [--mode text]` | a range of slides as a PDF (default: `~/Downloads`, named after the module). The default `exact` mode is a picture of each slide as the browser shows it; `text` is lighter, with selectable text, but the print engine draws some effects differently |
 | `respawn version` | |
 
 Every command works on the presentation in the current folder; `--dir` picks another one.

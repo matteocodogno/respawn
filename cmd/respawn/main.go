@@ -29,7 +29,7 @@ Usage:
   respawn new <folder>                 start a presentation (a copy of the showcase)
   respawn serve [deck] [flags]         present a deck (default: the first one)
   respawn build [--out folder]         check every deck; --out writes what was built
-  respawn pdf [deck] --from N --to M   a range of slides as a 16:9 PDF
+  respawn pdf [deck] --from N --to M   a range of slides as a 16:9 PDF (--mode text: selectable text)
   respawn version
 
 Every command works on the presentation in the current folder (the one with
@@ -169,6 +169,7 @@ func cmdPDF(args []string) error {
 	to := f.Int("to", -1, "last slide (default: the last one)")
 	out := f.String("out", "", "output file (default: in ~/Downloads, named after the module)")
 	theme := f.String("theme", "", "halloween")
+	mode := f.String("mode", "exact", "exact: the slides as on screen (images); text: vector, selectable text")
 	d, err := parse(f, args)
 	if err != nil {
 		return err
@@ -182,7 +183,7 @@ func cmdPDF(args []string) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	data, name, err := s.ExportPDF(ctx, *from, *to, *theme)
+	data, name, err := s.ExportPDF(ctx, *from, *to, *theme, *mode)
 	if err != nil {
 		return err
 	}
