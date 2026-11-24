@@ -1,0 +1,27 @@
+# respawn.yaml: one presentation, one or more decks built from the same slides.
+respawn: ">=0.1"
+title: Respawn Showcase
+brand: "RESPAWN // FIELD MANUAL"
+lang: en
+namespace: showcase            # prefix of what the deck keeps in the browser (notes, timers)
+
+decks:
+  - {name: talk, label: TALK, port: 8888}           # the short version
+  - {name: workshop, label: WORKSHOP, port: 8889}   # the long one, with the labs
+
+catalog:
+  primary: workshop            # when an exercise is in both decks, this version wins
+
+cover:
+  scribbles: ["slides are code", "commit before you present!"]
+
+# commands preloaded in the terminals' history (up arrow), besides the ones on the slides
+history: [ls -la, git status]
+
+# runtime text: every key is optional (see assets/js/respawn.js, T('...'))
+strings:
+  break.coffee.sub: Grab a coffee
+  break.back: Back at
+
+# respawn serve workshop --tunnel: the room joins at https://<host>
+# tunnel: {name: showcase-live, host: live.example.dev}

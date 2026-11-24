@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Terminal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1b26; }
+        #terminal { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+
+    <script type="module">
+        // Pin the fork's mouse tracking and scroll fixes to matching local JS/WASM.
+        const { init, Terminal, FitAddon } = await import(
+            '/terminal-assets/hvir-v0.4.0-20-demoit-render1/ghostty-web.js'
+        );
+
+        await init();
+
+        const frame = window.frameElement;
+        if (frame) {
+            frame.style.fontSize = 'var(--source-code-font-size, 16px)';
+        }
+
+        const container = document.getElementById('terminal');
+        const term = new Terminal({
+            fontSize: terminalFontSize(),
+            fontFamily: 'monospace',
+            cursorBlink: true,
+            focusOnOpen: false,
+            scrollback: 10000,
+            theme: {
+                background: '#1a1b26',
+                foreground: '#a9b1d6',
+            },
+        });
+
+        term.open(container);
+        term.attachCustomKeyEventHandler((event) => {
+            if (!event.metaKey || event.ctrlKey || event.altKey || event.shiftKey ||
+                event.key.toLowerCase() !== 'k' || !document.hasFocus() ||
+                !container.contains(document.activeElement)) {
+                return false;
+            }
+            // Clear scrollback, then ask the shell to redraw without accepting input.
+            event.preventDefault();
+            event.stopPropagation();
+            term.clear();
+            term.input('\x0c', true);
+            return true;
+        });
+        term.attachCustomWheelEventHandler((event) => {
+            if (!event.ctrlKey && !event.metaKey &&
+                (!document.hasFocus() || !container.contains(document.activeElement))) {
+                window.focus();
+                term.focus();
+            }
+            return false;
+        });
+
+        // FitAddon recalculates terminal cols/rows from the container's
+        // pixel dimensions and calls term.resize(), which fires onResize.
+        const fitAddon = new FitAddon();
+        term.loadAddon(fitAddon);
+        fitAddon.fit();
+
+        // Connect to the WebSocket PTY backend.
+        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(proto + '//' + location.host + '/ws/terminal' + location.search);
+        ws.binaryType = 'arraybuffer';
+
+        ws.onopen = () => {
+            // Forward user input to the server.
+            term.onData((data) => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(data);
+                }
+            });
+
+            // Send initial resize.
+            sendResize();
+
+            // Handle terminal resize: when FitAddon recalculates dimensions
+            // on container size changes, this forwards the new size to the PTY.
+            term.onResize(sendResize);
+        };
+
+        ws.onmessage = (e) => {
+            if (e.data instanceof ArrayBuffer) {
+                term.write(new Uint8Array(e.data));
+            } else {
+                term.write(e.data);
+            }
+        };
+
+        ws.onclose = () => {
+            term.options.disableStdin = true;
+            term.write('\r\n\x1b[90m[Session ended]\x1b[0m\r\n');
+        };
+
+        function terminalFontSize() {
+            // CSS lengths are resolved in the presentation, not the iframe viewport.
+            const size = frame ? parseFloat(window.parent.getComputedStyle(frame).fontSize) : 16;
+            return Number.isFinite(size) && size > 0 ? size : 16;
+        }
+
+        function sendResize() {
+            if (ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+            ws.send(JSON.stringify({
+                type: 'resize',
+                cols: term.cols || 80,
+                rows: term.rows || 24,
+            }));
+        }
+
+        // Automatically refit terminal when the container resizes (e.g.
+        // when the fake-window zoom button is clicked). FitAddon.fit()
+        // recalculates cols/rows from the new container size, calls
+        // term.resize(), which fires onResize → sendResize → PTY resize.
+        new ResizeObserver(() => {
+            const fontSize = terminalFontSize();
+            if (term.options.fontSize !== fontSize) {
+                term.options.fontSize = fontSize;
+            }
+            fitAddon.fit();
+        }).observe(container);
+
+        // Re-focus the terminal when the iframe's window regains focus
+        // (e.g. after clicking the zoom button in the parent frame).
+        window.addEventListener('focus', () => term.focus());
+        // Cancel deferred refocusing when the user switches to another iframe.
+        window.addEventListener('blur', () => term.blur());
+        if (new URLSearchParams(location.search).has('autofocus')) {
+            window.focus();
+            term.focus();
+        }
+    </script>
+</body>
+</html>

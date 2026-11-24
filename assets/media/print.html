@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>respawn slides</title>
+<!--
+  Print view of a range of slides: /media/print.html?from=10&to=40&deck=full
+  Opened by the "e" shortcut in the deck. Each slide is loaded in its own 1600x900 frame in
+  thumbnail mode (no terminal, no animations), then the print dialog opens: choose
+  "Save as PDF". One slide per page, 16:9 (1600x900), no margins: the page size comes
+  from @page, which Chrome applies only with the "Save as PDF" destination (a printer
+  uses its own paper). The title, and so the file name, names the module(s).
+-->
+<style>
+  @page { size: 1600px 900px; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #1a0f22; }
+  body { font: 16px/1.4 system-ui, sans-serif; color: #f3e7c8; }
+  .page { width: 1600px; height: 900px; overflow: hidden; position: relative; break-after: page; page-break-after: always; }
+  .page:last-child { break-after: auto; page-break-after: auto; }
+  .page iframe { width: 1600px; height: 900px; border: 0; display: block; }
+  #status {
+    position: fixed; top: 16px; right: 16px; z-index: 10; max-width: 420px;
+    background: #ffd21f; color: #000; border: 3px solid #000; box-shadow: 5px 5px 0 #000;
+    padding: 12px 16px; font-weight: 700;
+  }
+  #status button { margin-top: 8px; font: inherit; padding: 6px 10px; border: 2px solid #000; background: #fff; cursor: pointer; }
+  @media print { #status { display: none; } html, body { background: none; } }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+</style>
+</head>
+<body>
+<div id="status">Preparing the slides…</div>
+<script>
+window.__printErrors = [];
+window.addEventListener('error', (e) => window.__printErrors.push(String(e.message || e)));
+</script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search);
+  let from = Math.max(0, parseInt(q.get('from') || '0', 10) || 0);
+  let to = Math.max(0, parseInt(q.get('to') || String(from), 10) || 0);
+  if (to < from) [from, to] = [to, from];
+  const deck = (q.get('deck') || 'deck').replace(/[^a-z0-9-]/g, '');
+  const status = document.getElementById('status');
+  const total = to - from + 1;
+  const slides = from === to ? `slide ${from}` : `slides ${from}-${to}`;
+  document.title = `${slides}`;
+  // The module(s) the range belongs to, from the search index built with the deck.
+  const named = fetch(`/media/search-${deck}.json`, { cache: 'no-store' }).then((r) => r.json()).then((rows) => {
+    const mods = rows.filter((r) => r.m).map((r) => ({
+      n: r.n, num: ((r.x || '').match(/MODULE\s*(\d+)/i) || [])[1] || '', title: r.t || '',
+    }));
+    const at = (n) => mods.filter((m) => m.n <= n).pop();
+    const a = at(from), b = at(to);
+    if (!a && !b) return;
+    let name;
+    if (!a || !b || a.n !== b.n) {
+      const first = a ? a.num : '', last = b ? b.num : '';
+      name = first && last ? `Modules ${first}-${last}` : `Module ${last || first}`;
+    } else {
+      name = `Module ${a.num} ${a.title}`.trim();
+    }
+    document.title = `${name} · ${slides}`;
+  }).catch(() => {});
+
+  // ?headless=1: respawn's PDF export drives a headless Chrome over its DevTools protocol and
+  // prints this page straight to a PDF file (no dialog, no header or footer) as soon as
+  // window.__printReady is true. No print dialog here.
+  const headless = q.has('headless');
+  if (headless) status.remove();
+  const frames = [];
+  for (let n = from; n <= to; n++) {
+    const page = document.createElement('div');
+    page.className = 'page';
+    const f = document.createElement('iframe');
+    f.setAttribute('tabindex', '-1');
+    f.dataset.src = `/${n}?thumb=1&print=1${q.get('theme') === 'halloween' ? '&theme=halloween' : ''}`;
+    page.appendChild(f);
+    document.body.appendChild(page);
+    frames.push(f);
+  }
+
+  // Load a few frames at a time so a long range does not hammer demoit.
+  let done = 0;
+  const settle = (f) => new Promise((ok) => {
+    const w = f.contentWindow;
+    const fonts = w && w.document && w.document.fonts ? w.document.fonts.ready : Promise.resolve();
+    // Mermaid diagrams render after load: give them a moment.
+    const hasMermaid = w && w.document && w.document.querySelector('.mermaid');
+    Promise.race([fonts, new Promise((r) => setTimeout(r, 3000))])
+      .then(() => setTimeout(ok, hasMermaid ? 1800 : 300));
+  });
+  const load = (f) => new Promise((ok) => {
+    // A frame that never finishes loading (an open connection, a terminal) must not hold
+    // the export: after 10 s it counts as loaded.
+    let fired = false;
+    const once = () => { if (!fired) { fired = true; settle(f).then(fin); } };
+    setTimeout(once, 10000);
+    const fin = () => {
+      done += 1;
+      if (status.isConnected) status.textContent = `Preparing slide ${done} of ${total}…`;
+      window.__printProgress = done;
+      ok();
+    };
+    f.addEventListener('load', once, { once: true });
+    f.src = f.dataset.src;
+  });
+  const queue = frames.slice();
+  const worker = async () => { while (queue.length) await load(queue.shift()); };
+  const workers = headless ? 6 : 4;
+  Promise.all([...Array(workers)].map(worker).concat([named])).then(() => {
+    if (headless) { window.__printReady = true; return; }
+    status.innerHTML = `${total} slide${total > 1 ? 's' : ''} ready. In the print dialog set <b>Destination: Save as PDF</b>
+      for a 16:9 PDF with no margins (a printer prints on its own paper, with margins).<br>
+      <button type="button" id="again">Open the print dialog again</button>`;
+    document.getElementById('again').addEventListener('click', () => window.print());
+    setTimeout(() => window.print(), 300);
+  });
+})();
+</script>
+</body>
+</html>

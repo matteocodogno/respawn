@@ -1,0 +1,14 @@
+respawn
+Copyright 2026 Matteo Codogno
+
+This product includes software from demoit (https://github.com/dgageot/demoit),
+Copyright David Gageot, licensed under the Apache License, Version 2.0:
+the slide server and navigation (assets/js/demoit.js), the terminal bridge
+(internal/terminal) and live reload (internal/livereload), adapted for respawn.
+
+internal/terminal/resources/ghostty-web is a build of ghostty-web; see the LICENSE
+and provenance.json in that folder.
+
+assets/js/mermaid.esm.min.mjs is Mermaid (https://mermaid.js.org), MIT License.
+assets/js/qrcode.js is a QR code generator under the MIT License (see its header).
+The fonts in assets/fonts keep their own licenses (SIL Open Font License, Apache 2.0, Ubuntu Font Licence).

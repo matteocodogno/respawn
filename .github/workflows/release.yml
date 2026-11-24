@@ -1,0 +1,51 @@
+# Push a tag (git tag v0.1.0 && git push origin v0.1.0): binaries for macOS and Linux go to a
+# GitHub release, and Formula/respawn.rb on main is updated so `brew upgrade respawn` sees it.
+name: release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - name: build
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          for t in darwin/arm64 darwin/amd64 linux/arm64 linux/amd64; do
+            os=${t%/*}; arch=${t#*/}
+            dir="dist/respawn_${version}_${os}_${arch}"
+            mkdir -p "$dir"
+            GOOS=$os GOARCH=$arch CGO_ENABLED=0 go build -trimpath \
+              -ldflags "-s -w -X main.version=${version}" -o "$dir/respawn" ./cmd/respawn
+            cp LICENSE NOTICE README.md "$dir/"
+            tar -C dist -czf "$dir.tar.gz" "$(basename "$dir")"
+          done
+          (cd dist && sha256sum *.tar.gz > checksums.txt)
+          cat dist/checksums.txt
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/checksums.txt --generate-notes --title "$GITHUB_REF_NAME"
+      - name: update the Homebrew formula
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          scripts/formula.sh "$version" dist/checksums.txt > Formula/respawn.rb
+          git add Formula/respawn.rb
+          git commit -m "Formula: respawn ${version}" || exit 0
+          git push origin main

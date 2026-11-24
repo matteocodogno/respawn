@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="{{ .Lang }}">
+	<head>
+		<meta charset="utf-8">
+		<title>{{ .Title }} {{ .CurrentStep }}/{{ .StepCount }}</title>
+		<link rel="stylesheet" href="/style.css?hash={{ "style.css" | hash }}">
+		<script>
+			window.RESPAWN = {{ .Config }};
+			const CurrentStep = {{ .CurrentStep }};
+			const StepCount = {{ .StepCount }};
+			const NextURL = '{{ .NextURL }}';
+			const PrevURL = '{{ .PrevURL }}';
+		</script>
+	</head>
+	<body>
+		<div id="top">
+		  {{ .HTML }}
+	  	<nav-arrows previous="{{ .PrevURL }}" next="{{ .NextURL }}"></nav-arrows>
+		</div>
+		<div id="progression" style="width: calc(100vw * {{ .CurrentStep }} / {{ .StepCount }})"></div>
+	</body>
+	<script type="module" src="/js/demoit.js?hash={{ "js/demoit.js" | hash }}"></script>
+	{{ if .DevMode }}<script src="/livereload.js?port="></script>{{ end }}
+</html>
