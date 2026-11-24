@@ -30,8 +30,8 @@ brew tap matteocodogno/respawn https://github.com/matteocodogno/respawn
 brew install matteocodogno/respawn/respawn
 ```
 
-Before the first release, build from main with `brew install --HEAD matteocodogno/respawn/respawn`,
-or with Go 1.25+: `go install github.com/matteocodogno/respawn/cmd/respawn@latest`.
+Update with `brew upgrade respawn`. With Go 1.25+ instead:
+`go install github.com/matteocodogno/respawn/cmd/respawn@latest`.
 
 The PDF export needs Chrome, Chromium, Brave or Edge (`RESPAWN_CHROME=/path/to/browser`
 picks one by hand). `--tunnel` needs `cloudflared` (`brew install cloudflared`).
