@@ -33,9 +33,11 @@ type Config struct {
 	Namespace string `yaml:"namespace"`
 	// Theme is a stylesheet loaded over the built-in look: a theme of respawn
 	// (assets/themes/<name>.css) or of the presentation (its assets/themes/<name>.css).
-	Theme   string   `yaml:"theme"`
-	Decks   []Deck   `yaml:"decks"`
-	Accents []string `yaml:"accents"`
+	Theme string `yaml:"theme"`
+	// Quiz holds the rules of the live quiz ("::: quiz" on the slides).
+	Quiz    QuizConfig `yaml:"quiz"`
+	Decks   []Deck     `yaml:"decks"`
+	Accents []string   `yaml:"accents"`
 
 	Labs struct {
 		Kickers string `yaml:"kickers"`  // slides with a live terminal
@@ -81,6 +83,7 @@ func (c *Config) defaults() {
 	if c.Brand == "" {
 		c.Brand = "RESPAWN // FIELD MANUAL"
 	}
+	c.Quiz.defaults()
 	if c.Namespace == "" {
 		c.Namespace = "respawn"
 	}

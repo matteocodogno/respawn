@@ -2,6 +2,7 @@
 <html lang="{{ .Lang }}">
 	<head>
 		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>{{ .Title }} {{ .CurrentStep }}/{{ .StepCount }}</title>
 		<link rel="stylesheet" href="/style.css?hash={{ "style.css" | hash }}">
 		{{ with .Theme }}<link rel="stylesheet" href="/themes/{{ . }}.css?hash={{ printf "themes/%s.css" . | hash }}">{{ end }}

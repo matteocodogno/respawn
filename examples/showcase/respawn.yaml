@@ -16,6 +16,10 @@ catalog:
 cover:
   scribbles: ["slides are code", "commit before you present!"]
 
+# the live quiz ("::: quiz" slides): seconds per question, points for a right answer at
+# once (half of it at the last second), points lost for a wrong one, free skips per player
+quiz: {time: 15, points: 1000, penalty: 250, jokers: 2}
+
 # commands preloaded in the terminals' history (up arrow), besides the ones on the slides
 history: [ls -la, git status]
 

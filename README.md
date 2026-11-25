@@ -176,6 +176,7 @@ Plain **Markdown** paragraphs and lists.
 | `splash icon=... word="LEVEL 2!"` | YAML `{caption, chips: [...]}` |
 | `nexttoken` | YAML `{prompt, steps}`: next-token probabilities, step by step |
 | `cols tpl="1fr 2fr"` | other blocks, columns split by `+++` |
+| `quiz time=15 points=1000 id=...` | YAML `{question, options, answer, explain}`: a question of the live quiz (see "The room") |
 | `raw` | HTML, as is |
 
 Any inline value can be `{raw: "<b>html</b>"}`. Errors say file and line:
@@ -193,6 +194,43 @@ Press `j` for the QR code. Each start gets a new session code; `--resume` keeps 
 one and the room's slide. Polls and questions are kept in `.respawn/` until you clear them.
 Only a browser on your own computer drives the room: requests from the network, and
 everything that comes through the tunnel, can only read.
+
+### Live quiz
+
+A game show for the room, like the quiz apps of the big conferences. Write the questions
+on the slides:
+
+```markdown
+::: quiz time=15
+question: Which separator splits the columns of a `cols` container?
+options: ["`---`", "`+++`", "`:::`", "`|||`"]
+answer: B              # a letter, or the number of the option from 1
+explain: "`---` starts a new slide and `:::` opens a component."
+:::
+```
+
+With `--audience` (or `--tunnel`), on the quiz slide:
+
+- **Enter** shows the options and starts the clock. The phones get big answer buttons;
+  everyone has the question's seconds, counted from when their phone got the options.
+- **Enter** again closes it early (or the time runs out): the right answer lights up, with
+  how many picked each option and the three fastest right answers.
+- **Enter** once more, or **k** at any time, shows the leaderboard, on the phones too.
+  **Shift+Enter** plays the question again.
+
+Players pick a name on their first question. Scoring, set in `respawn.yaml`:
+
+```yaml
+quiz:
+  time: 15       # seconds per question (a slide can say time=20)
+  points: 1000   # a right answer at once; half of it at the last second
+  penalty: 250   # lost for a wrong answer
+  jokers: 2      # questions each player may skip for free; then a skip costs the penalty
+```
+
+The answers never reach the slides' HTML (they are in the speaker notes, `s`), and the
+options reach the phones only when the question starts. The game is kept in `.respawn/`
+until "Reset the game" on the leaderboard.
 
 One-time tunnel setup (Cloudflare account, a domain on Cloudflare):
 

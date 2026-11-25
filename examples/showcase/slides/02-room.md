@@ -51,6 +51,23 @@ Explain what a context window is, in two sentences, to a new developer.
 :::
 
 ---
+title: Quiz time
+kicker: Quiz_
+notes: Enter shows the options and starts the clock; the room answers on their phones. Enter again closes it early, then shows the leaderboard (k at any time).
+---
+
+::: quiz time=15
+question: Which separator splits the columns of a `cols` container?
+options:
+  - "`---`"
+  - "`+++`"
+  - "`:::`"
+  - "`|||`"
+answer: B
+explain: "`---` starts a new slide and `:::` opens a component."
+:::
+
+---
 title: What did we learn?
 kicker: Recap_
 center: true

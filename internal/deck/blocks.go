@@ -269,6 +269,8 @@ func component(head, content string) (string, error) {
 	switch name {
 	case "raw":
 		return content, nil
+	case "quiz":
+		return wrap(quizComponent(p, content))
 	case "p", "lead", "small", "label", "callout", "prompt", "reveal", "stat":
 		t, err := textOf(content)
 		if err != nil {

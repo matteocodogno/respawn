@@ -38,10 +38,11 @@ type Options struct {
 
 // Server is the audience copy of one deck.
 type Server struct {
-	src Source
-	o   Options
-	st  *State
-	lan string
+	src  Source
+	o    Options
+	st   *State
+	lan  string
+	game *game
 }
 
 // New prepares the audience copy; ListenAndServe starts it.
@@ -64,7 +65,9 @@ func New(src Source, o Options) *Server {
 		st.Live = o.Live
 	}
 	st.saveSession()
-	return &Server{src: src, o: o, st: st, lan: lanIP()}
+	srv := &Server{src: src, o: o, st: st, lan: lanIP()}
+	srv.loadGame()
+	return srv
 }
 
 var reNotCode = regexp.MustCompile(`[^A-Z0-9]`)
@@ -320,6 +323,10 @@ func (s *Server) post(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	data := s.body(r)
+	if strings.HasPrefix(path, "/__quiz/") {
+		s.quizPost(w, path, local, viewer, data)
+		return
+	}
 	st := s.st
 	only := func(what string) bool {
 		if !local {
@@ -584,6 +591,10 @@ func (s *Server) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if path == "/__quiz" {
+		s.quizGet(w, r, local)
+		return
+	}
 	only := func() bool {
 		if !local {
 			text(w, http.StatusForbidden, "only the presenter's computer can do that")
@@ -757,6 +768,7 @@ var (
 	reTermDock  = regexp.MustCompile(`(?s)<div class="term-dock">.*?</web-term></div>`)
 	reWebTerm   = regexp.MustCompile(`(?s)<web-term\b.*?</web-term>`)
 	reNotes     = regexp.MustCompile(`(?s)<speaker-notes>.*?</speaker-notes>`)
+	reQuizOpts  = regexp.MustCompile(`(?s)<quiz-options>.*?</quiz-options>`)
 	reLiveScr   = regexp.MustCompile(`<script src="/livereload\.js[^"]*"></script>`)
 	reNextConst = regexp.MustCompile(`const NextURL = '[^']*';`)
 	reNavNext   = regexp.MustCompile(`(<nav-arrows[^>]*\snext=")[^"]*(")`)
@@ -768,6 +780,7 @@ func audienceHTML(page string, n, live int) string {
 	page = reWebTerm.ReplaceAllString(page, "")
 	page = strings.ReplaceAll(page, " has-term", "")
 	page = reNotes.ReplaceAllString(page, "")
+	page = reQuizOpts.ReplaceAllString(page, "") // the options reach the phones when the question starts
 	page = reLiveScr.ReplaceAllString(page, "")
 	if n >= live { // no "next" on the live slide
 		self := "/" + strconv.Itoa(n)

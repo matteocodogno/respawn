@@ -488,3 +488,9 @@ func (s *Server) ExportPDF(ctx context.Context, a, b int, theme, mode string) ([
 	}
 	return s.PDF(ctx, a, b, theme, mode)
 }
+
+// Quiz finds a quiz of the running deck (for the audience copy's live quiz).
+func (s *Server) Quiz(id string) *deck.Quiz { _, b := s.current(); return b.Quiz(id) }
+
+// QuizRules are the rules of the live quiz, from respawn.yaml.
+func (s *Server) QuizRules() deck.QuizConfig { p, _ := s.current(); return p.Config.Quiz }

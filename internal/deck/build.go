@@ -86,6 +86,17 @@ type Built struct {
 	Terms    []int
 	Dropped  []int
 	Commands []string
+	Quizzes  []*Quiz
+}
+
+// Quiz finds a quiz of the deck by id.
+func (b *Built) Quiz(id string) *Quiz {
+	for _, q := range b.Quizzes {
+		if q.ID == id {
+			return q
+		}
+	}
+	return nil
 }
 
 func titleOrNum(s *Slide) Inline {
@@ -269,8 +280,20 @@ func Build(cfg *Config, sources []*Source, deck Deck) (*Built, error) {
 		if err != nil {
 			return nil, wrapErr(s, err)
 		}
-		b.Index = append(b.Index, b.indexRow(i, s, h))
-		h = strings.Replace(h, `<section class="slide`, `<section data-track="`+deck.Name+`" data-sid="`+sid(s, seen)+`" class="slide`, 1)
+		slideID := sid(s, seen)
+		h, quizzes, err := takeQuizzes(h, i, slideID, cfg.Quiz)
+		if err != nil {
+			return nil, wrapErr(s, err)
+		}
+		for _, q := range quizzes {
+			if b.Quiz(q.ID) != nil {
+				return nil, wrapErr(s, fmt.Errorf("quiz id %q is used twice", q.ID))
+			}
+		}
+		b.Quizzes = append(b.Quizzes, quizzes...)
+		// the options of a quiz are not searchable: the room must not read them early
+		b.Index = append(b.Index, b.indexRow(i, s, reQuizOpts.ReplaceAllString(h, "")))
+		h = strings.Replace(h, `<section class="slide`, `<section data-track="`+deck.Name+`" data-sid="`+slideID+`" class="slide`, 1)
 		b.Slides = append(b.Slides, h)
 	}
 	for _, h := range b.Slides {

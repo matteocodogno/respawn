@@ -797,6 +797,8 @@ const help = el('div', 'ov help-ov', `
                 <dt>q</dt><dd>poll</dd>
                 <dt>x</dt><dd>exercise catalog</dd>
                 <dt>a</dt><dd>questions from the room</dd>
+                <dt>Enter</dt><dd>quiz slide: start / close / leaderboard</dd>
+                <dt>k</dt><dd>quiz leaderboard</dd>
             </dl></section>
             <section><h3>Fun</h3><dl>
                 <dt>v</dt><dd>sound effects on / off</dd>
@@ -2249,4 +2251,234 @@ if (AUD && top) {
         stage.innerHTML = q ? qaNote(q, false) : '';
         stage.classList.toggle('on', Boolean(q));
     };
+}
+
+// ------------------------------------------------------------------ live quiz
+// A "::: quiz" slide is a question for the whole room, game-show style. On the presenter's
+// screen: Enter shows the options and starts the clock, Enter again closes it early, and
+// once it is over the right answer lights up with how many picked each option and who was
+// fastest; Enter then shows the leaderboard (k at any time), on the phones too.
+// The phones (audience copy) ask for a player name, show the options as big buttons for
+// the question's seconds, then the result: points for a right answer (more the faster),
+// minus points for a wrong one, and for no answer once the two jokers are gone.
+// The game, its scores and the answers live in the audience server, never in the slides.
+const QUIZ_COLORS = ['yellow', 'cyan', 'magenta', 'green', 'orange', 'purple', 'blue', 'pink'];
+const quizNum = (n) => (n > 0 ? `+${n.toLocaleString()}` : n.toLocaleString());
+const quizBoard = (rows, me) => `<ol class="qb-rows">${rows.map((r) => `
+    <li class="${r.me ? 'me' : ''}"><span class="qb-rank">${r.rank}</span><span class="qb-name">${escHtml(r.name)}</span>
+        <span class="qb-delta ${r.delta > 0 ? 'up' : r.delta < 0 ? 'down' : ''}">${r.delta ? quizNum(r.delta) : ''}</span>
+        <span class="qb-score">${r.score.toLocaleString()}</span></li>`).join('')}</ol>${me || ''}`;
+
+// --- presenter
+if (!AUD && !OFF && top) {
+    const boardOv = el('div', 'ov quiz-board-ov', '');
+    top.appendChild(boardOv);
+    let resetArmed = false;
+    const drawBoard = (d) => {
+        const rows = (d.leaders || []).slice(0, 10);
+        boardOv.innerHTML = `<div class="qb-card">
+            <div class="qb-head"><span class="qb-tag">LEADERBOARD</span><span class="qb-count">${d.players || 0} player${d.players === 1 ? '' : 's'}</span></div>
+            ${rows.length ? quizBoard(rows) : '<p class="qb-empty">Nobody is playing yet: the room joins with the QR code (j) and picks a name on the first question.</p>'}
+            <div class="qb-foot"><button type="button" data-a="reset">${resetArmed ? 'Sure? Click again to reset the game' : 'Reset the game'}</button>
+                <span>Esc or k to close</span></div></div>`;
+    };
+    const openBoard = () => pollFetch('/__quiz/board', { on: true })
+        .then((d) => { resetArmed = false; drawBoard(d); boardOv.classList.add('open'); })
+        .catch(() => toast('<span class="ms">leaderboard</span> START WITH respawn serve --audience'));
+    boardOv._close = () => { boardOv.classList.remove('open'); pollFetch('/__quiz/board', { on: false }).catch(() => {}); };
+    boardOv.addEventListener('click', (ev) => {
+        const b = ev.target.closest('button');
+        if (!b || b.dataset.a !== 'reset') return;
+        if (!resetArmed) { resetArmed = true; pollFetch('/__quiz').then(drawBoard).catch(() => {}); return; }
+        pollFetch('/__quiz/reset', {}).then((d) => { resetArmed = false; drawBoard(d); toast('<span class="ms">restart_alt</span> NEW GAME'); }).catch(() => {});
+    });
+    boardOv._keys = { k: () => boardOv._close(), Enter: () => boardOv._close() };
+    shortcuts.k = () => (boardOv.classList.contains('open') ? boardOv._close() : openBoard());
+
+    const card = top.querySelector('.quiz[data-quiz]');
+    if (card) {
+        const id = card.dataset.quiz;
+        card.querySelectorAll('.quiz-opts li').forEach((li, i) => { li.dataset.c = QUIZ_COLORS[i % QUIZ_COLORS.length]; });
+        const hud = el('div', 'quiz-hud', '');
+        card.appendChild(hud);
+        let phase = 'ready', end = 0, timer = 0, last = null;
+        const paintClock = () => {
+            const c = hud.querySelector('.qh-clock');
+            if (!c || phase !== 'open') return;
+            const left = Math.max(0, (end - Date.now()) / 1000);
+            c.querySelector('b').textContent = Math.ceil(left);
+            c.style.setProperty('--p', `${last ? (100 * left) / last.time : 0}`);
+            c.classList.toggle('hurry', left <= 5);
+        };
+        setInterval(paintClock, 100);
+        const paint = (d) => {
+            const r = d.round && d.round.id === id ? d.round : null;
+            const was = phase;
+            phase = !r ? 'ready' : r.open ? 'open' : 'done';
+            last = r;
+            card.classList.toggle('go', phase !== 'ready');
+            card.classList.toggle('done', phase === 'done');
+            const lis = card.querySelectorAll('.quiz-opts li');
+            lis.forEach((li, i) => {
+                li.classList.toggle('right', phase === 'done' && i === r.answer);
+                li.classList.toggle('off', phase === 'done' && i !== r.answer);
+                const n = li.querySelector('.qn');
+                const total = phase === 'done' ? r.counts.reduce((a, b) => a + b, 0) : 0;
+                n.innerHTML = phase === 'done' ? `${r.counts[i]}<small>${total ? Math.round((100 * r.counts[i]) / total) : 0}%</small>` : '';
+                li.style.setProperty('--share', phase === 'done' && total ? `${(100 * r.counts[i]) / total}%` : '0%');
+            });
+            if (phase === 'ready') {
+                hud.innerHTML = `<span class="qh-go"><kbd>Enter</kbd> START THE QUIZ</span><span class="qh-n">${d.players || 0} player${d.players === 1 ? '' : 's'}</span>`;
+            } else if (phase === 'open') {
+                end = Date.now() + r.left * 1000;
+                if (!hud.querySelector('.qh-clock')) {
+                    hud.innerHTML = `<span class="qh-clock"><b></b></span><span class="qh-n"></span><span class="qh-hint"><kbd>Enter</kbd> close now</span>`;
+                }
+                hud.querySelector('.qh-n').innerHTML = `<b>${r.answered}</b> / ${r.players} answered`;
+                paintClock();
+            } else {
+                const fast = (r.fastest || []).map((f, i) => `<li><span>${['🥇', '🥈', '🥉'][i]}</span>${escHtml(f.name)} <small>${(f.ms / 1000).toFixed(1)} s</small></li>`).join('');
+                hud.innerHTML = `${fast ? `<ol class="qh-fast">${fast}</ol>` : '<span class="qh-n">Nobody got it right</span>'}
+                    <span class="qh-hint"><kbd>Enter</kbd> leaderboard · <kbd>⇧ Enter</kbd> play again</span>`;
+                if (was === 'open' && soundOn()) withAudio(moduleSting);
+            }
+            if (boardOv.classList.contains('open')) drawBoard(d);
+        };
+        const offline = () => {
+            phase = 'offline';
+            card.classList.remove('go', 'done');
+            hud.innerHTML = '<span class="qh-n">The quiz needs the room: respawn serve --audience (or --tunnel)</span>';
+        };
+        const refresh = () => {
+            clearTimeout(timer);
+            pollFetch('/__quiz').then(paint).catch(offline)
+                .finally(() => { timer = setTimeout(refresh, phase === 'open' ? 300 : 1500); });
+        };
+        refresh();
+        const start = () => pollFetch('/__quiz/start', { id }).then((d) => {
+            if (soundOn()) withAudio(partSting);
+            paint(d);
+            refresh();
+        }).catch(offline);
+        shortcuts.Enter = (ev) => {
+            if (phase === 'ready' || phase === 'offline' || (phase === 'done' && ev.shiftKey)) start();
+            else if (phase === 'open') pollFetch('/__quiz/stop', {}).then(paint).catch(() => {});
+            else if (phase === 'done') openBoard();
+        };
+    }
+}
+
+// --- the room's phones
+if (AUD && top) {
+    const ov = el('div', 'quiz-phone', '');
+    document.body.appendChild(ov);
+    let d = null, end = 0, timer = 0, busy = false, msg = '';
+    const onQuizSlide = () => Boolean(top.querySelector('.quiz'));
+    const DISMISS = `${NS}.quiz.seen`;
+    const paintClock = () => {
+        const b = ov.querySelector('.qp-bar i');
+        const n = ov.querySelector('.qp-left');
+        const r = d && d.round;
+        if (!b || !r) return;
+        const left = Math.max(0, (end - Date.now()) / 1000);
+        b.style.width = `${(100 * left) / r.time}%`;
+        n.textContent = Math.ceil(left);
+        ov.classList.toggle('hurry', left <= 5);
+    };
+    setInterval(paintClock, 100);
+    const sigOf = (s) => (ov.dataset.sig === s ? false : (ov.dataset.sig = s, true));
+    const me = () => (d && d.name ? `<div class="qp-me"><b>${escHtml(d.name)}</b><span>${(d.score || 0).toLocaleString()} pts${d.rank ? ` · #${d.rank} of ${d.players}` : ''}</span><span>${'🃏'.repeat(d.jokers || 0)}</span></div>` : '');
+    const draw = () => {
+        const r = d && d.round;
+        const open = r && r.open;
+        let view = 'none';
+        if (d && d.board && d.leaders) view = 'board';
+        else if (open && d.name === null) view = 'name';
+        else if (open) view = r.mine === undefined ? 'answer' : 'locked';
+        else if (r && !open && store.get(DISMISS, 0) !== r.n && (r.result || r.slide === slideNo)) view = 'result';
+        else if (onQuizSlide() && d && d.name === null) view = 'name';
+        else if (onQuizSlide() && d && d.name) view = 'wait';
+        ov.classList.toggle('open', view !== 'none');
+        ov.dataset.view = view;
+        if (view === 'none') { ov.dataset.sig = ''; return; }
+        if (view === 'name') {
+            if (!sigOf(`name|${msg}`)) return;
+            ov.innerHTML = `<form class="qp-card qp-name"><span class="qp-tag">QUIZ</span>
+                <h2>Your player name</h2><input name="n" maxlength="24" autocomplete="nickname" value="${escHtml(store.get(`${NS}.quiz.name`, ''))}" placeholder="e.g. Ada" required>
+                <button type="submit">I'm in</button><p class="qp-msg">${escHtml(msg)}</p></form>`;
+            ov.querySelector('form').addEventListener('submit', (ev) => {
+                ev.preventDefault();
+                const name = ov.querySelector('input').value.trim();
+                if (!name) return;
+                store.set(`${NS}.quiz.name`, name);
+                pollFetch('/__quiz/name', { name }).then((res) => { msg = res.ok ? '' : res.error || 'Try another name'; tick(); })
+                    .catch(() => { msg = 'Not sent: try again'; draw(); });
+            });
+            return;
+        }
+        if (view === 'answer' || view === 'locked') {
+            if (sigOf(`${view}|${r.n}|${r.mine}`)) {
+                ov.innerHTML = `<div class="qp-card qp-play"><div class="qp-top"><span class="qp-tag">QUESTION ${r.n}</span><span class="qp-left"></span></div>
+                    <div class="qp-bar"><i></i></div><h2 class="qp-q">${r.q || ''}</h2>
+                    <div class="qp-opts">${(r.options || []).map((o, i) => `<button type="button" data-c="${i}" data-color="${QUIZ_COLORS[i % QUIZ_COLORS.length]}" class="${r.mine === i ? 'mine' : ''}" ${view === 'locked' ? 'disabled' : ''}><span class="ql">${LETTERS[i]}</span><span>${o}</span></button>`).join('')}</div>
+                    <p class="qp-msg">${view === 'locked' ? `Locked in: <b>${LETTERS[r.mine]}</b>. Wait for the others…` : 'Fast and right scores more. A wrong answer costs points.'}</p>${me()}</div>`;
+            }
+            paintClock();
+            return;
+        }
+        if (view === 'result') {
+            const res = r.result;
+            const kind = res ? res.kind : 'watch';
+            if (!sigOf(`result|${r.n}|${kind}|${d.score}`)) return;
+            const title = { right: 'RIGHT!', wrong: 'WRONG', joker: 'JOKER USED', missed: 'TOO LATE', watch: 'THE ANSWER' }[kind];
+            const line = !res ? '' : kind === 'right' ? `${quizNum(res.delta)} <small>in ${(res.ms / 1000).toFixed(1)} s</small>`
+                : kind === 'joker' ? `0 <small>${d.jokers} joker${d.jokers === 1 ? '' : 's'} left</small>` : quizNum(res.delta);
+            ov.innerHTML = `<div class="qp-card qp-result" data-kind="${kind}"><span class="qp-tag">QUESTION ${r.n}</span>
+                <h2>${title}</h2>${line ? `<p class="qp-delta">${line}</p>` : ''}
+                <p class="qp-answer"><span class="ql">${LETTERS[r.answer]}</span>${(r.options || [])[r.answer] || ''}</p>
+                ${r.explain ? `<p class="qp-explain">${r.explain}</p>` : ''}${me()}
+                <button type="button" data-a="close">OK</button></div>`;
+            return;
+        }
+        if (view === 'wait') {
+            if (!sigOf(`wait|${d.name}|${d.score}|${d.rank}|${d.players}`)) return;
+            ov.innerHTML = `<div class="qp-card qp-wait"><span class="qp-tag">QUIZ</span><h2>GET READY</h2>
+                <p class="qp-msg">The options show up here when the trainer starts the question. Fast and right scores more; a wrong answer costs points; ${d.jokers || 0} joker${d.jokers === 1 ? '' : 's'} let you skip without losing any.</p>${me()}</div>`;
+            return;
+        }
+        if (view === 'board') {
+            if (!sigOf(`board|${JSON.stringify(d.leaders)}|${d.rank}`)) return;
+            const mine = d.leaders.some((x) => x.me) || !d.name ? '' : `<p class="qp-msg">You: <b>#${d.rank}</b> · ${(d.score || 0).toLocaleString()} pts</p>`;
+            ov.innerHTML = `<div class="qp-card qp-board"><span class="qp-tag">LEADERBOARD</span>${quizBoard(d.leaders, mine)}</div>`;
+        }
+    };
+    ov.addEventListener('click', (ev) => {
+        const b = ev.target.closest('button');
+        if (!b || !d || !d.round) return;
+        if (b.dataset.a === 'close') { store.set(DISMISS, d.round.n); draw(); return; }
+        if (b.dataset.c === undefined || busy || d.round.mine !== undefined) return;
+        busy = true;
+        const choice = Number(b.dataset.c);
+        b.classList.add('mine');
+        pollFetch('/__quiz/answer', { n: d.round.n, choice })
+            .then((res) => { if (res.ok) d.round.mine = choice; else { b.classList.remove('mine'); toast(escHtml(res.error || 'Not taken')); } draw(); })
+            .catch(() => b.classList.remove('mine'))
+            .finally(() => { busy = false; });
+    });
+    const tick = () => {
+        clearTimeout(timer);
+        pollFetch('/__quiz')
+            .then((nd) => {
+                if (!nd || nd.name === undefined) return;
+                d = nd;
+                if (d.round && d.round.open && typeof d.round.left === 'number') {
+                    const e = Date.now() + d.round.left * 1000;
+                    if (!end || Math.abs(e - end) > 400 || ov.dataset.view !== 'answer') end = e;
+                }
+                draw();
+            })
+            .catch(() => {})
+            .finally(() => { timer = setTimeout(tick, (d && d.round && d.round.open) || onQuizSlide() ? 400 : 1500); });
+    };
+    tick();
 }
