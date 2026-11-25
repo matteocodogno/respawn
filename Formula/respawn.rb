@@ -2,28 +2,28 @@
 class Respawn < Formula
   desc "Comic-book slide decks as code, with live terminals and a follow-along audience"
   homepage "https://github.com/matteocodogno/respawn"
-  version "0.2.0"
+  version "0.3.0"
   license "Apache-2.0"
 
   on_macos do
     on_arm do
-      url "https://github.com/matteocodogno/respawn/releases/download/v0.2.0/respawn_0.2.0_darwin_arm64.tar.gz"
-      sha256 "d232d28fa308f424c2d4379109b0212737d2e70a5d78f4764bdbb4b7771eedb4"
+      url "https://github.com/matteocodogno/respawn/releases/download/v0.3.0/respawn_0.3.0_darwin_arm64.tar.gz"
+      sha256 "4c5207115a9580a36e254374cf766b5de173fb4e515ca9c48ffe86104446eb1a"
     end
     on_intel do
-      url "https://github.com/matteocodogno/respawn/releases/download/v0.2.0/respawn_0.2.0_darwin_amd64.tar.gz"
-      sha256 "d0f7f5d9f111d0af2d8084a51c5d6c9bb30a3841f77998f11cf097204f57c4d5"
+      url "https://github.com/matteocodogno/respawn/releases/download/v0.3.0/respawn_0.3.0_darwin_amd64.tar.gz"
+      sha256 "0a9978df94640bce55902e05aeacd3a0050fefef938cf78ff15254054746932e"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/matteocodogno/respawn/releases/download/v0.2.0/respawn_0.2.0_linux_arm64.tar.gz"
-      sha256 "830084237e5c672bc78a663c6addac3f643c78fd320ae7c170dcc3836d968af2"
+      url "https://github.com/matteocodogno/respawn/releases/download/v0.3.0/respawn_0.3.0_linux_arm64.tar.gz"
+      sha256 "480df1161178fe5c8df67e132c2ad11e6c511410b27c8fd16078ebde6b486cf6"
     end
     on_intel do
-      url "https://github.com/matteocodogno/respawn/releases/download/v0.2.0/respawn_0.2.0_linux_amd64.tar.gz"
-      sha256 "479d3a1a19e3f3176bd21e726cf8c02269f352de69a96d0916518f9006f538b4"
+      url "https://github.com/matteocodogno/respawn/releases/download/v0.3.0/respawn_0.3.0_linux_amd64.tar.gz"
+      sha256 "5515c84774436cca8436f49d9df67f525294227ea13b2525273d54ec8b2cf5b7"
     end
   end
 
