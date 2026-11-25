@@ -76,6 +76,7 @@ title: My Talk
 brand: "MY TALK // FIELD MANUAL" # footer of every slide
 lang: en                         # <html lang>, clock format of the breaks
 namespace: mytalk                # prefix of what the deck keeps in the browser
+theme: clean                     # the look, see "Themes" (default: borderlands)
 
 decks:                           # default: one deck called "main" on 8888
   - {name: talk, label: TALK, port: 8888}
@@ -203,11 +204,44 @@ cloudflared tunnel route dns mytalk-live live.example.dev
 
 then `tunnel: {name: mytalk-live, host: live.example.dev}` in `respawn.yaml`.
 
-## Customizing the look
+## Themes
 
-Everything in `assets/` of this repository (style, fonts, scripts, the notes and print pages)
-is built into the binary. A file at the same path in a presentation's `assets/` replaces it,
-for that presentation only.
+The look of a presentation is set in layers, each one loaded after the previous:
+
+1. **respawn's base style**: layout, components, animations and the default
+   `borderlands` look (comic ink, hard shadows, halftone). It comes with the binary, so
+   `brew upgrade respawn` improves every presentation.
+2. **The theme**, `theme:` in `respawn.yaml`: `borderlands` (default) or `clean` (calm slate
+   background, one sans-serif family, straight titles, soft shadows). A presentation can
+   have its own: `theme: acme` loads `assets/themes/acme.css`. Copy
+   [`assets/themes/clean.css`](assets/themes/clean.css) to start one; a theme can live in
+   its own repository and be copied into each presentation that uses it.
+3. **`assets/theme.css`** of the presentation, if it exists: small changes to the theme.
+
+A theme mostly sets the design tokens of `:root`, and overrides a rule only where a token is
+not enough:
+
+```css
+:root {
+    --night: #0f1726;  --panel: #16213a;  --text: #e6ebf5;  --muted: #9aa7bf;
+    --yellow: #f5c542; --cyan: #45c6d8;   --magenta: #ef5d8f; /* ...the module accents */
+    --ink: #0b1220;                         /* outlines, and text on accent colours */
+    --line: calc(var(--u) * .1);            /* outline width (--u = 1% of the slide) */
+    --shadow: 0 calc(var(--u) * .4) calc(var(--u) * 1.4) rgba(0, 0, 0, .35);
+    --display: 'Ubuntu', sans-serif;        /* titles */
+    --body: 'Ubuntu', sans-serif;
+    --glow-a: #1d2c4f; --glow-b: #162540;   /* background glows */
+    --halftone: transparent;                /* the dot pattern */
+    --code-bg: #111a2e; --stripe: #1a2540;  /* code, table rows */
+}
+```
+
+Fonts and images of a theme go in `assets/fonts/` and `assets/images/`. `respawn build`
+checks that the theme exists and lists the ones available. The Halloween edition (`w` in
+the deck) works over any theme.
+
+Any other built-in file (a script, the notes page) can still be replaced by a file at the
+same path in the presentation's `assets/`, for that presentation only.
 
 ## Development
 

@@ -30,9 +30,12 @@ type Config struct {
 	Assets  string `yaml:"assets"` // folder overriding the built-in assets (images/, media/, js/, fonts/, style.css)
 	Lang    string `yaml:"lang"`
 	// Namespace prefixes what the deck keeps in the browser (sticky notes, timers...).
-	Namespace string   `yaml:"namespace"`
-	Decks     []Deck   `yaml:"decks"`
-	Accents   []string `yaml:"accents"`
+	Namespace string `yaml:"namespace"`
+	// Theme is a stylesheet loaded over the built-in look: a theme of respawn
+	// (assets/themes/<name>.css) or of the presentation (its assets/themes/<name>.css).
+	Theme   string   `yaml:"theme"`
+	Decks   []Deck   `yaml:"decks"`
+	Accents []string `yaml:"accents"`
 
 	Labs struct {
 		Kickers string `yaml:"kickers"`  // slides with a live terminal

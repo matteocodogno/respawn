@@ -106,3 +106,25 @@ func TestAudience(t *testing.T) {
 		t.Errorf("session: %s", w.Body.String())
 	}
 }
+
+func TestTheme(t *testing.T) {
+	s := showcase(t)
+	if h, _ := s.Page(1); strings.Contains(h, "/themes/") {
+		t.Fatalf("default look loads a theme")
+	}
+	s.proj.Config.Theme = "clean"
+	s.pages = map[int]string{}
+	if err := CheckTheme(s.proj.Config); err != nil {
+		t.Fatal(err)
+	}
+	if h, _ := s.Page(1); !strings.Contains(h, `href="/themes/clean.css?hash=`) {
+		t.Fatalf("clean theme not loaded")
+	}
+	if w := get(t, s.handler(nil), "/themes/clean.css", "127.0.0.1:5000"); w.Code != 200 {
+		t.Fatalf("theme file: %d", w.Code)
+	}
+	s.proj.Config.Theme = "nope"
+	if err := CheckTheme(s.proj.Config); err == nil || !strings.Contains(err.Error(), "clean") {
+		t.Fatalf("unknown theme: %v", err)
+	}
+}

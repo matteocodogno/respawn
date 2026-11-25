@@ -80,6 +80,9 @@ func New(o Options) (*Server, error) {
 		return nil, err
 	}
 	cfg := proj.Config
+	if err := CheckTheme(cfg); err != nil {
+		return nil, err
+	}
 	if o.Deck == "" {
 		o.Deck = cfg.Decks[0].Name
 	}
@@ -120,6 +123,9 @@ func (s *Server) rebuild() error {
 	if err != nil {
 		return err
 	}
+	if err := CheckTheme(proj.Config); err != nil {
+		return err
+	}
 	b, ok := proj.Decks[s.o.Deck]
 	if !ok {
 		return fmt.Errorf("deck %q is not in respawn.yaml any more", s.o.Deck)
@@ -132,6 +138,7 @@ func (s *Server) rebuild() error {
 
 type page struct {
 	HTML        template.HTML
+	Theme       string // over style.css: /themes/<Theme>.css, "" for the default look
 	Lang        string
 	Title       string
 	Config      any
@@ -184,6 +191,7 @@ func (s *Server) Page(n int) (string, bool) {
 	}
 	pg := page{
 		HTML:        template.HTML(b.Slides[n]),
+		Theme:       themeName(p.Config),
 		Lang:        p.Config.Lang,
 		Title:       p.Config.Title,
 		Config:      s.runtimeConfig(p, b),

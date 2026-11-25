@@ -4,6 +4,8 @@
 		<meta charset="utf-8">
 		<title>{{ .Title }} {{ .CurrentStep }}/{{ .StepCount }}</title>
 		<link rel="stylesheet" href="/style.css?hash={{ "style.css" | hash }}">
+		{{ with .Theme }}<link rel="stylesheet" href="/themes/{{ . }}.css?hash={{ printf "themes/%s.css" . | hash }}">{{ end }}
+		{{ with "theme.css" | hash }}<link rel="stylesheet" href="/theme.css?hash={{ . }}">{{ end }}
 		<script>
 			window.RESPAWN = {{ .Config }};
 			const CurrentStep = {{ .CurrentStep }};

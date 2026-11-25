@@ -1,0 +1,100 @@
+/* respawn theme "clean": the same slides without the comic book. Calm slate background,
+   one sans-serif family, straight titles, thin lines and soft shadows. For client meetings
+   and talks where the field-manual look is too loud.
+
+   theme: clean   in respawn.yaml. A theme is only CSS loaded after style.css: it sets the
+   tokens of :root and, where a token is not enough, overrides a few rules. Copy this file
+   to <presentation>/assets/themes/<name>.css to start your own. */
+
+@font-face { font-family: 'Ubuntu'; font-weight: 300; font-display: block; src: url('/fonts/ubuntu-latin-300-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Ubuntu'; font-weight: 400; font-display: block; src: url('/fonts/ubuntu-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Ubuntu'; font-weight: 500; font-display: block; src: url('/fonts/ubuntu-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Ubuntu'; font-weight: 700; font-display: block; src: url('/fonts/ubuntu-latin-700-normal.woff2') format('woff2'); }
+
+:root {
+    --ink: #0b1220;
+    --night: #0f1726;
+    --panel: #16213a;
+    --panel-raised: #1e2b47;
+    --terminal: #0a0f1a;
+    --paper: #f4f6fb;
+    --paper-ink: #0b1220;
+    --yellow: #f5c542;
+    --magenta: #ef5d8f;
+    --cyan: #45c6d8;
+    --orange: #f3934a;
+    --purple: #9b8cf5;
+    --green: #6fd08c;
+    --blue: #5b9cf5;
+    --red: #f06262;
+    --pink: #f59ac0;
+    --text: #e6ebf5;
+    --muted: #9aa7bf;
+
+    --glow-a: #1d2c4f;
+    --glow-b: #162540;
+    --halftone: transparent;
+    --strong: #fff;
+    --code-bg: #111a2e;
+    --code-text: #dde4f2;
+    --code-comment: #7c8aa5;
+    --stripe: #1a2540;
+    --card-muted: #121c31;
+
+    --line: calc(var(--u) * .1);
+    --line-sm: calc(var(--u) * .08);
+    --shadow: 0 calc(var(--u) * .4) calc(var(--u) * 1.4) rgba(0, 0, 0, .35);
+    --shadow-sm: 0 calc(var(--u) * .2) calc(var(--u) * .6) rgba(0, 0, 0, .3);
+
+    --display: 'Ubuntu', 'Segoe UI', sans-serif;
+    --body: 'Ubuntu', 'Segoe UI', sans-serif;
+    --marker: 'Ubuntu', 'Segoe UI', sans-serif;
+
+    --accent: var(--blue);
+}
+[data-accent="yellow"] { --accent: var(--yellow); }
+
+#top::before { display: none; }
+.sparks, .beam, .lvlup, .scribble { display: none; }
+
+/* titles: straight, no outline, no hard shadow */
+.slide h1, .hero-title, .hero-sub, .slide.part h1, .slide.statement h1, .splash .sp-word,
+.catalog-head h2, .qa-head h2, .join-code, .poll-clock {
+    -webkit-text-stroke: 0;
+    text-shadow: none;
+    transform: none;
+    font-weight: 700;
+    letter-spacing: -.01em;
+}
+.slide h1 { color: var(--paper); line-height: 1.05; }
+.kicker, .rarity, .timer, .foot .xp, .partnum, .tile, .term-dock .term-label, .btn, .reveal-btn,
+.reveal-note, .live-chip, .poll-tag, .ex-tag, .join-tag, .hold-chip, .qa-note, .clock-card,
+.help-card, .export-card, .poll-compose, .ask-card, .press, .lvlup, .brk-sub, .clock-title {
+    transform: none;
+}
+.kicker { border-radius: calc(var(--u) * .3); border: none; box-shadow: none; font-weight: 700; }
+.card h3 { letter-spacing: 0; font-weight: 700; }
+
+/* cards, tables, code: rounded, light lines */
+.card, table.tbl, .code, .cmd, .prompt, .callout, .node, .reveal-note {
+    border-radius: calc(var(--u) * .6);
+    border-color: rgba(255, 255, 255, .08);
+}
+table.tbl { overflow: hidden; }
+
+/* entrances: fade and rise, no tilt */
+@keyframes slam { 0% { opacity: 0; transform: translateY(calc(var(--u) * .8)); } 100% { opacity: 1; transform: none; } }
+@keyframes zoom-slam { 0% { opacity: 0; transform: scale(.96); } 100% { opacity: 1; transform: none; } }
+@keyframes pop { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes pop-paper { 0% { opacity: 0; transform: scale(.96); } 100% { opacity: 1; transform: none; } }
+@keyframes stamp { 0% { opacity: 0; transform: scale(.96); } 100% { opacity: 1; transform: none; } }
+@keyframes drop { 0% { opacity: 0; transform: translateY(calc(var(--u) * -.8)); } 100% { opacity: 1; transform: none; } }
+@keyframes slidein { 0% { opacity: 0; transform: translateX(calc(var(--u) * 3)); } 100% { opacity: 1; transform: none; } }
+@keyframes lvlup { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .75; } }
+@keyframes grow { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+
+/* highlighted cards: an accent edge instead of a hard offset shadow */
+.card.hl { box-shadow: inset 0 calc(var(--u) * .3) 0 var(--accent), var(--shadow); }
+.card.t-secondary.hl { box-shadow: inset 0 calc(var(--u) * .3) 0 var(--magenta), var(--shadow); }
+.card.t-tertiary.hl { box-shadow: inset 0 calc(var(--u) * .3) 0 var(--cyan), var(--shadow); }

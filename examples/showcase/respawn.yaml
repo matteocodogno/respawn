@@ -4,6 +4,7 @@ title: Respawn Showcase
 brand: "RESPAWN // FIELD MANUAL"
 lang: en
 namespace: showcase            # prefix of what the deck keeps in the browser (notes, timers)
+theme: borderlands             # or clean; your own: assets/themes/<name>.css. Small tweaks: assets/theme.css
 
 decks:
   - {name: talk, label: TALK, port: 8888}           # the short version

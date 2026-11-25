@@ -153,6 +153,14 @@ func cmdBuild(args []string) error {
 		fmt.Printf("%-12s %4d slides, %3d with a terminal, %2d exercises\n", d.Name, len(b.Slides), len(b.Terms), len(b.Catalog))
 	}
 	fmt.Printf("%-12s %4d exercises in the shared catalog\n", "catalog", len(p.Catalog))
+	if err := server.CheckTheme(p.Config); err != nil {
+		return err
+	}
+	theme := p.Config.Theme
+	if theme == "" {
+		theme = server.DefaultTheme
+	}
+	fmt.Printf("%-12s %s (available: %s)\n", "theme", theme, strings.Join(server.Themes(p.Config), ", "))
 	if *out != "" {
 		if err := p.WriteDebug(*out); err != nil {
 			return err
