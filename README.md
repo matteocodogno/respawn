@@ -19,6 +19,10 @@ review them, diff them and ship them like code.
   with a session code (or a QR code), follow your slide, answer polls, send questions, see
   breaks and exercises. They never get ahead of you, never see notes or terminals.
   `--tunnel` does the same through a Cloudflare Tunnel, for any network.
+- **Live quiz**: multiple-choice questions written on the slides, answered on the phones
+  against the clock, with points for speed, penalties, jokers and a leaderboard.
+- **Themes**: the comic-book look by default, `clean` for calmer rooms, or your own theme
+  as one CSS file of design tokens.
 
 respawn started as the slide system of the [AI4Dev](https://ai4dev.dev) course and is a fork
 of David Gageot's [demoit](https://github.com/dgageot/demoit).
@@ -44,7 +48,18 @@ cd my-talk
 respawn serve --dev          # http://localhost:8888, reloads while you edit
 ```
 
-Press `?` in the deck for every shortcut.
+Press `?` in the deck for every shortcut. The main ones:
+
+| Key | | Key | |
+| --- | --- | --- | --- |
+| `→` `←` `Space` | next / previous slide | `j` | QR code to join (with `--audience`) |
+| `/` `f` | search the slides | `l` | hold the room on its slide / release |
+| `s` | speaker notes window | `q` | poll |
+| `t` | terminal full screen | `Enter` | quiz slide: start, close, leaderboard |
+| `m` | timer | `k` | quiz leaderboard |
+| `c` `p` | coffee / lunch break | `x` | exercise catalog |
+| `n` | sticky note | `a` | questions from the room |
+| `e` | export to PDF | `w` | Halloween edition |
 
 | Command | What it does |
 | --- | --- |
@@ -102,6 +117,8 @@ history: [git status]            # extra commands in the terminals' history
 gif: media/party.gif             # "h" in the deck: a gif from assets/
 strings:                         # text shown to the room, see below
   break.coffee.sub: Pausa caffè
+
+quiz: {time: 15, points: 1000, penalty: 250, jokers: 2}  # the live quiz, see "Live quiz"
 
 tunnel: {name: mytalk-live, host: live.example.dev}
 ```
