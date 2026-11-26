@@ -52,7 +52,7 @@ func (s *Slide) render(c renderCtx, index, total int, term string) (string, erro
 			trk = ` <i class="trk">` + escape(c.label, true) + `</i>`
 		}
 		foot = `<div class="foot"><span class="brand">` + escape(c.cfg.Brand, false) + trk + `</span>` +
-			`<span class="xp" style="--xp:` + fixed(xp, 1) + `%"><b></b></span><span class="lv">LV ` + itoa(index) + `/` + itoa(total) + `</span></div>`
+			`<span class="xp" style="--xp:` + fixed(xp, 1) + `%"><b></b></span><span class="lv"><span class="lv-k">LV </span>` + itoa(index) + `/` + itoa(total) + `</span></div>`
 	}
 	kicker := ""
 	if !s.Kicker.Empty() {

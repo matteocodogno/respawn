@@ -266,9 +266,14 @@ The look of a presentation is set in layers, each one loaded after the previous:
 1. **respawn's base style**: layout, components, animations and the default
    `borderlands` look (comic ink, hard shadows, halftone). It comes with the binary, so
    `brew upgrade respawn` improves every presentation.
-2. **The theme**, `theme:` in `respawn.yaml`: `borderlands` (default) or `clean` (calm slate
-   background, one sans-serif family, straight titles, soft shadows). A presentation can
-   have its own: `theme: acme` loads `assets/themes/acme.css`. Copy
+2. **The theme**, `theme:` in `respawn.yaml`:
+   - `borderlands` (default): the comic-book field manual;
+   - `clean`: calm slate background, one sans-serif family, straight titles, soft shadows;
+   - `welld`: the WellD brand identity (red, violet and teal on the brand's dark background,
+     Ubuntu and Noto Serif, the logo on the cover and in the footer, module openers in a
+     full brand colour). Use `brand: welld.ch` for the footer.
+
+   A presentation can have its own: `theme: acme` loads `assets/themes/acme.css`. Copy
    [`assets/themes/clean.css`](assets/themes/clean.css) to start one; a theme can live in
    its own repository and be copied into each presentation that uses it.
 3. **`assets/theme.css`** of the presentation, if it exists: small changes to the theme.
@@ -288,6 +293,7 @@ not enough:
     --glow-a: #1d2c4f; --glow-b: #162540;   /* background glows */
     --halftone: transparent;                /* the dot pattern */
     --code-bg: #111a2e; --stripe: #1a2540;  /* code, table rows */
+    --mm-node: #2a2630; --mm-text: #fff;    /* Mermaid diagrams: --mm-bg, -border, -line, -font... */
 }
 ```
 

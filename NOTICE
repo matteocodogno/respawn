@@ -11,4 +11,8 @@ and provenance.json in that folder.
 
 assets/js/mermaid.esm.min.mjs is Mermaid (https://mermaid.js.org), MIT License.
 assets/js/qrcode.js is a QR code generator under the MIT License (see its header).
-The fonts in assets/fonts keep their own licenses (SIL Open Font License, Apache 2.0, Ubuntu Font Licence).
+The fonts in assets/fonts keep their own licenses (SIL Open Font License, Apache 2.0, Ubuntu Font Licence);
+Noto Serif is under the SIL Open Font License (assets/fonts/LICENSE-noto-serif.txt).
+
+The WellD logos in assets/images/themes/welld are trademarks of WellD Sagl, included
+for the "welld" theme only; they are not covered by the Apache License.

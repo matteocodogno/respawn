@@ -1,0 +1,260 @@
+/* respawn theme "welld": the brand identity of WellD (Brand Manual v1.0.4).
+
+   - Colours: primary red #E50339, secondary violet #7F3BED, tertiary teal #03A59A, on the
+     brand's dark background #141218, which fades to a deep red at the bottom, with the
+     fine dot grid and the soft "swoosh" support element.
+   - Type: Ubuntu for titles and interface (regular weight, sentence case), Noto Serif for
+     running text.
+   - Logo: the white primary logo on the cover, the logomark in the footer.
+   - Module openers take a full brand colour, like the section pages of the brand manual.
+
+   theme: welld   in respawn.yaml (brand: welld.ch reads well in the footer). */
+
+@font-face { font-family: 'Ubuntu'; font-weight: 300; font-display: block; src: url('/fonts/ubuntu-latin-300-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Ubuntu'; font-weight: 400; font-display: block; src: url('/fonts/ubuntu-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Ubuntu'; font-weight: 500; font-display: block; src: url('/fonts/ubuntu-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Ubuntu'; font-weight: 700; font-display: block; src: url('/fonts/ubuntu-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Serif'; font-weight: 400; font-display: block; src: url('/fonts/noto-serif-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Serif'; font-weight: 400; font-style: italic; font-display: block; src: url('/fonts/noto-serif-latin-400-italic.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Serif'; font-weight: 500; font-display: block; src: url('/fonts/noto-serif-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Serif'; font-weight: 700; font-display: block; src: url('/fonts/noto-serif-latin-700-normal.woff2') format('woff2'); }
+
+:root {
+    /* brand colours */
+    --wd-red: #E50339;
+    --wd-violet: #7F3BED;
+    --wd-teal: #03A59A;
+    --wd-dark: #141218;
+    --wd-wine: #5a1d2a;
+
+    --ink: #141218;
+    --night: var(--wd-dark);
+    --panel: #1f1c24;
+    --panel-raised: #2a2630;
+    --terminal: #0e0d11;
+    --paper: #ffffff;
+    --paper-ink: #141218;
+    --text: #f4f2f6;
+    --muted: #aaa4b0;
+
+    /* highlights on the dark background: lighter tints of the brand colours, readable as
+       text on dark and under dark text */
+    --yellow: #ff5a7e;
+    --magenta: #E50339;
+    --red: #ff4d6a;
+    --pink: #ff8fb0;
+    --orange: #ff7a59;
+    --purple: #a47bf7;
+    --blue: #8f6bf3;
+    --cyan: #2cc7ba;
+    --green: #3dd6a3;
+
+    --glow-a: transparent;
+    --glow-b: transparent;
+    --halftone: rgba(255, 255, 255, .07);
+    --strong: #fff;
+    --code-bg: #0e0d11;
+    --code-text: #e9e6ee;
+    --code-comment: #8a8392;
+    --stripe: #24212a;
+    --card-muted: #19171d;
+
+    --line: calc(var(--u) * .08);
+    --line-sm: calc(var(--u) * .06);
+    --radius: calc(var(--u) * .8);
+    --shadow: 0 calc(var(--u) * .4) calc(var(--u) * 1.6) rgba(0, 0, 0, .35);
+    --shadow-sm: 0 calc(var(--u) * .2) calc(var(--u) * .6) rgba(0, 0, 0, .3);
+
+    --display: 'Ubuntu', 'Segoe UI', sans-serif;
+    --body: 'Ubuntu', 'Segoe UI', sans-serif;
+    --serif: 'Noto Serif', Georgia, serif;
+    --marker: 'Ubuntu', 'Segoe UI', sans-serif;
+
+    --accent: var(--wd-red);
+}
+
+/* module colours: the three brand colours, in turn */
+[data-accent="yellow"], [data-accent="orange"], [data-accent="pink"] { --accent: var(--wd-red); }
+[data-accent="cyan"], [data-accent="green"], [data-accent="blue"] { --accent: var(--wd-teal); }
+[data-accent="magenta"], [data-accent="purple"] { --accent: var(--wd-violet); }
+
+/* ---------- background: dark to deep red, dot grid, swoosh ---------- */
+#top { background: linear-gradient(180deg, var(--wd-dark) 0%, #1c141b 35%, #3a1822 72%, var(--wd-wine) 100%); }
+#top::before {
+    background-image: radial-gradient(var(--halftone) calc(var(--u) * .08), transparent calc(var(--u) * .1));
+    background-size: calc(var(--u) * 1.6) calc(var(--u) * 1.6);
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+#top::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' preserveAspectRatio='none'%3E%3Cpath d='M-80 690 C 220 560, 520 760, 760 700 S 1120 430, 1060 250 S 1280 -40, 1700 120' fill='none' stroke='white' stroke-opacity='.045' stroke-width='90' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+.sparks, .beam, .lvlup, .scribble, .press { display: none; }
+#progression { background: var(--wd-red); height: 3px; opacity: 1; }
+
+/* ---------- type ---------- */
+.slide h1, .hero-title, .hero-sub, .slide.part h1, .slide.statement h1, .splash .sp-word,
+.catalog-head h2, .qa-head h2, .join-code, .poll-clock, .qp-card h2, .mission-num {
+    -webkit-text-stroke: 0;
+    text-shadow: none;
+    transform: none;
+    letter-spacing: -.005em;
+}
+.slide h1 { font: 400 calc(var(--u) * 3.6) / 1.1 var(--display); color: var(--paper); }
+.slide p, .slide li, .lead, .hero-tag, .card p, .card .txt, .callout, .tbl td, .reveal-note, .kv dd, .step p, .qp-explain {
+    font-family: var(--serif);
+}
+.slide strong, .slide b { font-weight: 700; color: var(--strong); }
+.slide code { color: var(--yellow); }
+
+/* kicker: the brand's outlined pill (OUR CAPABILITIES, FIGURES...) */
+.kicker, .rarity {
+    transform: none;
+    font: 500 calc(var(--u) * .95) / 1 var(--display);
+    letter-spacing: .14em;
+    color: var(--paper);
+    background: transparent;
+    border: calc(var(--u) * .08) solid rgba(255, 255, 255, .32);
+    border-radius: 999px;
+    box-shadow: none;
+    padding: calc(var(--u) * .45) calc(var(--u) * 1);
+}
+
+/* ---------- cover: the logo, a big title, the red swoosh ---------- */
+.slide.cover { align-items: flex-start; justify-content: center; text-align: left; padding-left: calc(var(--u) * 6); }
+.slide.cover::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--u) * 5);
+    left: calc(var(--u) * 6);
+    width: calc(var(--u) * 12);
+    height: calc(var(--u) * 4.6);
+    background: url('/images/themes/welld/logo-white.svg') left center / contain no-repeat;
+}
+.slide.cover::after {
+    content: '';
+    position: absolute;
+    right: calc(var(--u) * -6);
+    top: calc(var(--u) * -4);
+    width: calc(var(--u) * 52);
+    height: calc(var(--u) * 66);
+    z-index: -1;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 660'%3E%3Cpath d='M500 30 C 330 -10, 150 120, 210 290 S 470 430, 330 560 S 60 600, 30 650' fill='none' stroke='%23E50339' stroke-width='46' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.slide.cover .wrap { position: relative; max-width: calc(var(--u) * 58); }
+.hero-title { font: 400 calc(var(--u) * 7.4) / 1.02 var(--display); color: var(--paper); }
+.hero-title span { animation: none !important; }
+.hero-sub {
+    order: -1;
+    margin: 0 0 calc(var(--u) * 1.6);
+    font: 500 calc(var(--u) * 1.05) / 1 var(--display);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: transparent;
+    border: calc(var(--u) * .08) solid rgba(255, 255, 255, .32);
+    border-radius: 999px;
+    box-shadow: none;
+    padding: calc(var(--u) * .5) calc(var(--u) * 1.1);
+}
+.slide.cover .wrap { display: flex; flex-direction: column; align-items: flex-start; }
+.slide.cover .wrap > br { display: none; }
+.hero-tag { margin: calc(var(--u) * 2.4) 0 0; font-size: calc(var(--u) * 1.8); color: var(--text); opacity: .85; }
+
+/* ---------- module openers: a full brand colour ---------- */
+.slide.module { background: var(--accent); }
+.slide.module::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' preserveAspectRatio='none'%3E%3Cpath d='M-60 760 C 300 600, 560 820, 820 760 S 1180 520, 1120 330 S 1300 40, 1680 180' fill='none' stroke='white' stroke-opacity='.12' stroke-width='110' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+.mission-num { font: 300 calc(var(--u) * 10) / .85 var(--display); color: rgba(255, 255, 255, .35); -webkit-text-stroke: 0; }
+.slide.module h1 { font-size: calc(var(--u) * 5.6); line-height: 1.02; color: #fff; }
+.slide.module .lead { color: #fff; opacity: .92; }
+.slide.module .rarity { border-color: rgba(255, 255, 255, .6); }
+.slide.module .foot, .slide.module .foot .brand, .slide.module .foot .lv { color: rgba(255, 255, 255, .85); }
+.slide.module .foot .xp b { background: #fff; }
+
+/* statements and parts: the title alone, larger */
+.slide.statement h1, .slide.part h1 { font-weight: 400; color: var(--paper); }
+
+/* ---------- footer: welld.ch on the left, the page on the right ---------- */
+.foot { font: 400 calc(var(--u) * 1) / 1 var(--serif); letter-spacing: 0; color: var(--muted); }
+.foot .brand { display: flex; align-items: center; gap: calc(var(--u) * .8); color: var(--muted); }
+.foot .brand::before {
+    content: '';
+    width: calc(var(--u) * 1.5);
+    height: calc(var(--u) * 1.4);
+    background: url('/images/themes/welld/icon-white.svg') center / contain no-repeat;
+    opacity: .8;
+}
+.foot .brand .trk { margin-left: 0; padding: 0; color: var(--muted); background: none; border: 0; font-style: normal; }
+.foot .brand .trk::before { content: '·'; margin-right: calc(var(--u) * .8); }
+.foot .xp { height: calc(var(--u) * .14); border: 0; box-shadow: none; transform: none; background: rgba(255, 255, 255, .12); border-radius: 999px; }
+.foot .xp b { background: var(--accent); }
+.foot .lv { -webkit-text-stroke: 0; color: var(--muted); }
+.foot .lv-k { display: none; }
+
+/* ---------- cards, tables, code, callouts: rounded, quiet lines ---------- */
+.card, table.tbl, .code, .cmd, .prompt, .callout, .node, .reveal-note, .tile, .stat, .quiz-opts li, .qb-card, .qb-rows li {
+    border-radius: var(--radius);
+    border-color: rgba(255, 255, 255, .07);
+    box-shadow: var(--shadow-sm);
+}
+table.tbl, .code { overflow: hidden; }
+.card { background: var(--panel); }
+.card h3 { font: 500 calc(var(--u) * 1.9) / 1.2 var(--display); letter-spacing: 0; color: var(--paper); }
+.card .lbl, .card .label { font-family: var(--display); letter-spacing: .12em; }
+.card.hl { box-shadow: inset 0 calc(var(--u) * .25) 0 var(--accent), var(--shadow-sm); }
+.card.t-secondary.hl { box-shadow: inset 0 calc(var(--u) * .25) 0 var(--wd-violet), var(--shadow-sm); }
+.card.t-tertiary.hl { box-shadow: inset 0 calc(var(--u) * .25) 0 var(--wd-teal), var(--shadow-sm); }
+.tbl th { font-family: var(--display); font-weight: 500; letter-spacing: .08em; background: var(--panel-raised); color: var(--paper); border-bottom: calc(var(--u) * .12) solid var(--wd-red); }
+.callout { border-left: calc(var(--u) * .35) solid var(--accent); }
+
+/* the clock, chips, buttons and panels of the presenter's tools */
+.timer, .live-chip, .poll-tag, .ex-tag, .join-tag, .hold-chip, .qb-tag, .qp-tag, .btn, .reveal-btn {
+    transform: none;
+    border-radius: 999px;
+    box-shadow: none;
+}
+.qb-tag, .qp-tag { background: var(--wd-red); color: #fff; border-color: transparent; font-family: var(--display); font-weight: 500; letter-spacing: .12em; }
+.qp-card, .help-card, .export-card, .poll-compose, .ask-card, .clock-card, .qa-note {
+    transform: none;
+    border-radius: calc(var(--u) * 1);
+    border-color: rgba(255, 255, 255, .08);
+}
+.qp-card { border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .5); border-width: 1px; }
+.qp-opts button { border-radius: 12px; border-width: 1px; box-shadow: none; }
+.qp-card > button, .qp-name button { border-radius: 999px; background: var(--wd-red); color: #fff; border: 0; box-shadow: none; }
+
+/* entrances: fade and rise, nothing tilts */
+@keyframes slam { 0% { opacity: 0; transform: translateY(calc(var(--u) * .8)); } 100% { opacity: 1; transform: none; } }
+@keyframes zoom-slam { 0% { opacity: 0; transform: scale(.97); } 100% { opacity: 1; transform: none; } }
+@keyframes pop { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes pop-paper { 0% { opacity: 0; transform: translateY(calc(var(--u) * .6)); } 100% { opacity: 1; transform: none; } }
+@keyframes stamp { 0% { opacity: 0; transform: scale(.97); } 100% { opacity: 1; transform: none; } }
+@keyframes drop { 0% { opacity: 0; transform: translateY(calc(var(--u) * -.8)); } 100% { opacity: 1; transform: none; } }
+@keyframes slidein { 0% { opacity: 0; transform: translateX(calc(var(--u) * 3)); } 100% { opacity: 1; transform: none; } }
+@keyframes lvlup { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .75; } }
+@keyframes grow { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+
+/* diagrams: dark panel, brand nodes (read by the Mermaid setup in demoit.js) */
+:root {
+    --mm-dark: true; --mm-bg: #1f1c24; --mm-node: #2a2630; --mm-node2: #3a1822; --mm-node3: #1f1c24;
+    --mm-text: #f4f2f6; --mm-border: #E50339; --mm-line: #aaa4b0; --mm-label: #7F3BED; --mm-font: Ubuntu, sans-serif;
+}
+.mermaid { background: var(--panel); border: calc(var(--u) * .08) solid rgba(255, 255, 255, .07); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+.term-dock .term-label { transform: none; border-radius: 999px; }
+
+/* module titles: no outline, no hard shadow */
+.slide.module h1 { text-shadow: none; -webkit-text-stroke: 0; transform: none; }
+.slide.module .foot .brand .trk { color: rgba(255, 255, 255, .85); }

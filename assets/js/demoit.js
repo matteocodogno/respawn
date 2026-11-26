@@ -752,33 +752,36 @@ customElements.define('vs-code', VSCode);
 
 // Diagrams
 import mermaid from '/js/mermaid.esm.min.mjs';
+// The colours come from the theme: --mm-* custom properties (respawn's look is the default).
+const mmCss = getComputedStyle(document.documentElement);
+const mm = (name, fallback) => mmCss.getPropertyValue(`--mm-${name}`).trim() || fallback;
 mermaid.initialize({
     startOnLoad: true,
     theme: 'base',
     themeVariables: {
-        darkMode: false,
-        background: '#f3e7c8',
-        primaryColor: '#ffd21f',
-        primaryTextColor: '#000000',
-        primaryBorderColor: '#000000',
-        lineColor: '#1d1020',
-        secondaryColor: '#2be0e8',
-        tertiaryColor: '#f3e7c8',
-        actorBkg: '#ffd21f',
-        actorBorder: '#000000',
-        actorTextColor: '#000000',
-        actorLineColor: '#1d1020',
-        signalColor: '#1d1020',
-        signalTextColor: '#1d1020',
-        labelBoxBkgColor: '#ff2e7e',
-        labelBoxBorderColor: '#000000',
-        labelTextColor: '#000000',
-        loopTextColor: '#1d1020',
-        noteBkgColor: '#2be0e8',
-        noteBorderColor: '#000000',
-        noteTextColor: '#000000',
-        sequenceNumberColor: '#ffd21f',
-        fontFamily: 'Barlow Semi Condensed, sans-serif',
+        darkMode: mm('dark', 'false') === 'true',
+        background: mm('bg', '#f3e7c8'),
+        primaryColor: mm('node', '#ffd21f'),
+        primaryTextColor: mm('text', '#000000'),
+        primaryBorderColor: mm('border', '#000000'),
+        lineColor: mm('line', '#1d1020'),
+        secondaryColor: mm('node2', '#2be0e8'),
+        tertiaryColor: mm('node3', '#f3e7c8'),
+        actorBkg: mm('node', '#ffd21f'),
+        actorBorder: mm('border', '#000000'),
+        actorTextColor: mm('text', '#000000'),
+        actorLineColor: mm('line', '#1d1020'),
+        signalColor: mm('line', '#1d1020'),
+        signalTextColor: mm('line', '#1d1020'),
+        labelBoxBkgColor: mm('label', '#ff2e7e'),
+        labelBoxBorderColor: mm('border', '#000000'),
+        labelTextColor: mm('text', '#000000'),
+        loopTextColor: mm('line', '#1d1020'),
+        noteBkgColor: mm('node2', '#2be0e8'),
+        noteBorderColor: mm('border', '#000000'),
+        noteTextColor: mm('text', '#000000'),
+        sequenceNumberColor: mm('node', '#ffd21f'),
+        fontFamily: mm('font', 'Barlow Semi Condensed, sans-serif'),
         fontSize: '18px'
     }
 });
