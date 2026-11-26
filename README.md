@@ -194,6 +194,7 @@ Plain **Markdown** paragraphs and lists.
 | `nexttoken` | YAML `{prompt, steps}`: next-token probabilities, step by step |
 | `cols tpl="1fr 2fr"` | other blocks, columns split by `+++` |
 | `quiz time=15 points=1000 id=...` | YAML `{question, options, answer, explain}`: a question of the live quiz (see "The room") |
+| `character src=themes/welld/d-hello.svg height=30 place=right` | a mascot that moves (see "Characters"); `place`: inline, left, right, center, corner |
 | `raw` | HTML, as is |
 
 Any inline value can be `{raw: "<b>html</b>"}`. Errors say file and line:
@@ -258,6 +259,29 @@ cloudflared tunnel route dns mytalk-live live.example.dev
 ```
 
 then `tunnel: {name: mytalk-live, host: live.example.dev}` in `respawn.yaml`.
+
+## Characters
+
+A character is an SVG drawing rigged for respawn: every piece that moves is a
+`<g data-part="...">` with its pivot, and respawn brings it to life. It breathes, blinks,
+twitches its ears, follows the pointer with its eyes and head (or looks around by itself
+when nobody moves the mouse), waves now and then, and reacts when clicked or when the
+presenter presses `d`: a jump, a cheer, a head shake, or a dance for the puppet.
+
+```markdown
+::: character src=themes/welld/d-hello.svg height=30 place=right
+:::
+```
+
+or on the cover, in `respawn.yaml`: `cover: {character: themes/welld/d-hello.svg}`.
+
+Built in: the WellD mascot "D" in three poses, `themes/welld/d-hello.svg`, `d-peace.svg`
+and `d-puppet.svg` (a marionette). Your own: put the SVG under `assets/images/` and name
+its parts: `all`, `head`, `body`, `ear-l`/`ear-r`, `eye-l`/`eye-r` (best as black shapes in a
+mask over the head, so they can look around and close), `arm-l`/`arm-r`, `leg-l`/`leg-r`;
+`data-wave="arm-r"` on the `<svg>` names the arm that waves, and `RSP` in ids is made unique
+on each copy. `scripts/rig-welld-mascot.py` shows how the D was rigged from its drawings.
+Characters hold still in the PDF and for people who asked their system for less motion.
 
 ## Themes
 

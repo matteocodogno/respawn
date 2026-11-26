@@ -57,6 +57,8 @@ type Config struct {
 	Cover struct {
 		Scribbles []string `yaml:"scribbles"`
 		Press     string   `yaml:"press"`
+		// Character is a rigged SVG (under images/) that lives on the cover.
+		Character string `yaml:"character"`
 	} `yaml:"cover"`
 
 	History []string          `yaml:"history"` // extra commands for the terminals' shell history

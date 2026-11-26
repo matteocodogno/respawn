@@ -1,6 +1,7 @@
 package deck
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -92,6 +93,13 @@ func (s *Slide) render(c renderCtx, index, total int, term string) (string, erro
 			`<div class="hero-sub">` + s.Kicker.Render() + `</div>` +
 			`<p class="hero-tag">` + s.Lead.Render() + `</p>` + s2 +
 			`<div class="press">` + escape(c.cfg.Cover.Press, false) + `</div></div>`
+		if ch := c.cfg.Cover.Character; ch != "" {
+			tag, err := characterTag(ch, "", "", "cover-char")
+			if err != nil {
+				return "", fmt.Errorf("respawn.yaml cover.character: %w", err)
+			}
+			inner += tag
+		}
 		return `<section class="slide cover"` + acc + `>` + inner + body + `</section>` + notes, nil
 	case "module":
 		digits := reNonDigit.ReplaceAllString(s.Num.Text, "")

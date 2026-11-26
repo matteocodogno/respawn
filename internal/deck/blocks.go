@@ -287,6 +287,8 @@ func component(head, content string) (string, error) {
 			in = append(in, inline(it))
 		}
 		return list(in, flag(p, "ordered", false), flag(p, "big", false)), nil
+	case "character":
+		return wrap(characterComponent(p))
 	case "img":
 		var m map[string]any
 		if err := yamlOf(content, &m); err != nil {

@@ -799,6 +799,7 @@ const help = el('div', 'ov help-ov', `
                 <dt>a</dt><dd>questions from the room</dd>
                 <dt>Enter</dt><dd>quiz slide: start / close / leaderboard</dd>
                 <dt>k</dt><dd>quiz leaderboard</dd>
+                <dt>d</dt><dd>the mascot on the slide reacts</dd>
             </dl></section>
             <section><h3>Fun</h3><dl>
                 <dt>v</dt><dd>sound effects on / off</dd>
@@ -2482,3 +2483,85 @@ if (AUD && top) {
     };
     tick();
 }
+
+// ------------------------------------------------------------------ characters
+// <rsp-character data-src="/images/...svg"> ("::: character", or cover.character in
+// respawn.yaml) is a rigged SVG: every movable piece is a <g data-part="..."> with its pivot.
+// Parts respawn knows: all, head, body, ear-l/ear-r, eye-l/eye-r (holes of a mask: they look
+// around and blink), arm-l/arm-r, leg-l/leg-r; data-wave on the <svg> names the arm that
+// waves now and then. The character breathes, blinks, twitches its ears, follows the pointer
+// with its eyes and head (or looks around by itself), and reacts when clicked or when the
+// presenter presses d. "RSP" in the SVG's ids is made unique per character.
+const CHAR_SVG = new Map();
+let charSeq = 0;
+const charsOnSlide = new Set();
+class RspCharacter extends HTMLElement {
+    connectedCallback() {
+        if (this._ready) return;
+        this._ready = true;
+        const src = this.dataset.src;
+        if (!CHAR_SVG.has(src)) CHAR_SVG.set(src, fetch(src).then((r) => (r.ok ? r.text() : Promise.reject(new Error(src)))));
+        CHAR_SVG.get(src).then((text) => {
+            const uid = `rsp${++charSeq}`;
+            this.innerHTML = text.replace(/RSP-/g, `${uid}-`);
+            this.setAttribute('role', 'img');
+            this.setAttribute('aria-label', 'mascot');
+            this.bringToLife();
+        }).catch(() => { this.classList.add('missing'); });
+    }
+
+    bringToLife() {
+        const svg = this.querySelector('svg');
+        if (!svg) return;
+        const still = THUMB || PRINT || matchMedia('(prefers-reduced-motion: reduce)').matches;
+        this.figure = svg.dataset.figure || '';
+        const set = (k, v) => this.style.setProperty(k, v);
+        let lastPointer = 0;
+        const look = (x, y) => { set('--lx', Math.max(-1, Math.min(1, x)).toFixed(3)); set('--ly', Math.max(-1, Math.min(1, y)).toFixed(3)); };
+        look(0, 0);
+        charsOnSlide.add(this);
+        if (still) return;
+        this.classList.add('alive');
+        const later = (fn, a, b) => setTimeout(fn, a + Math.random() * (b - a));
+        // eyes and head follow the pointer, anywhere on the page
+        window.addEventListener('pointermove', (ev) => {
+            const r = svg.getBoundingClientRect();
+            if (!r.width) return;
+            lastPointer = Date.now();
+            look((ev.clientX - (r.left + r.width / 2)) / Math.max(260, r.width * 1.5),
+                (ev.clientY - (r.top + r.height * 0.3)) / Math.max(220, r.height * 1.2));
+        }, { passive: true });
+        // nobody moves the mouse (a projector): it looks around by itself
+        const wander = () => {
+            if (Date.now() - lastPointer > 4000) look((Math.random() * 2 - 1) * 0.8, (Math.random() * 2 - 1) * 0.6);
+            later(wander, 1400, 3600);
+        };
+        later(wander, 600, 1500);
+        const blink = () => {
+            this.classList.add('blink');
+            setTimeout(() => this.classList.remove('blink'), 140);
+            if (Math.random() < 0.25) setTimeout(() => { this.classList.add('blink'); setTimeout(() => this.classList.remove('blink'), 120); }, 260);
+            later(blink, 2200, 6000);
+        };
+        later(blink, 800, 2500);
+        const twitch = () => {
+            const side = Math.random() < 0.5 ? 'twitch-l' : 'twitch-r';
+            this.classList.add(side);
+            setTimeout(() => this.classList.remove(side), 420);
+            later(twitch, 2500, 7000);
+        };
+        later(twitch, 1500, 4000);
+        this.addEventListener('pointerenter', () => this.classList.add('hover'));
+        this.addEventListener('pointerleave', () => this.classList.remove('hover'));
+        this.addEventListener('click', (ev) => { ev.stopPropagation(); this.react(); });
+    }
+
+    react() {
+        if (!this.classList.contains('alive') || this.classList.contains('react')) return;
+        const kind = this.figure === 'puppet' ? 'dance' : ['jump', 'cheer', 'spin'][Math.floor(Math.random() * 3)];
+        this.classList.add('react', kind);
+        setTimeout(() => this.classList.remove('react', kind), kind === 'dance' ? 1600 : 1000);
+    }
+}
+customElements.define('rsp-character', RspCharacter);
+if (top && !OFF) shortcuts.d = () => charsOnSlide.forEach((c) => c.react());

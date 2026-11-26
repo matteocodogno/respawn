@@ -43,3 +43,15 @@ func TestCheckVersion(t *testing.T) {
 		}
 	}
 }
+
+func TestCharacter(t *testing.T) {
+	h, err := characterComponent(map[string]string{"src": "themes/welld/d-hello.svg", "place": "right", "height": "24"})
+	if err != nil || h != `<rsp-character class="char place-right" data-src="/images/themes/welld/d-hello.svg" style="--h:24"></rsp-character>` {
+		t.Fatalf("%q %v", h, err)
+	}
+	for _, p := range []map[string]string{{"src": "../x.svg"}, {"src": "a.png"}, {"src": "a.svg", "place": "top"}, {"src": "a.svg", "height": "x"}} {
+		if _, err := characterComponent(p); err == nil {
+			t.Errorf("accepted %v", p)
+		}
+	}
+}
